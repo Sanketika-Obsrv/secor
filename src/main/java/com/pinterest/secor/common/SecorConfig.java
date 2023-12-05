@@ -859,4 +859,11 @@ public class SecorConfig {
     }
 
     public String[] getMessageChannelIdentifier() { return getStringArray("secor.partition.message.channel.identifier"); }
+
+    public String getDatasetTimeZoneKey() {
+        String defaultPath = "obsrv_meta.dataset_tz";
+        String timezoneKey = getString("secor.message.timezone.key");
+        return Strings.isNullOrEmpty(timezoneKey) ? defaultPath : timezoneKey;
+    }
+
 }

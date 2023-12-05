@@ -20,6 +20,8 @@ package com.pinterest.secor.parser;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
+
+import com.google.common.base.Strings;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
@@ -28,6 +30,7 @@ import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
 
 import org.apache.commons.lang.StringUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,15 +42,15 @@ import com.pinterest.secor.message.Message;
  * 'message.timestamp.name') and the date pattern (specified by
  * 'message.timestamp.input.pattern'). The output file pattern is fetched from
  * the property 'secor.partition.output_dt_format'.
- * 
+ *
  * This generic class can even handle the DateMessageParse functionality. For
  * ex: it will generate the same partition when the
  * 'secor.partition.output_dt_format' property is set to "'dt='yyyy-MM-dd"
- * 
+ *
  * @see http://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html
- * 
+ *
  * @author Santhosh Vasabhaktula (santhosh.vasabhaktula@gmail.com)
- * 
+ *
  */
 public class ChannelDateMessageParser extends MessageParser {
 
@@ -57,14 +60,12 @@ public class ChannelDateMessageParser extends MessageParser {
 	private Map<String, String> partitionPrefixMap;
 	private static final String channelScrubRegex = "[^a-zA-Z0-9._$-]";
 	private SimpleDateFormat outputFormatter;
-	private TimeZone messageTimeZone;
+	private final String defaultDatasetTimezone = "UTC";
 
 	public ChannelDateMessageParser(SecorConfig config) {
 		super(config);
-		messageTimeZone = mConfig.getMessageTimeZone();
 		outputFormatter = new SimpleDateFormat(
 				StringUtils.defaultIfBlank(mConfig.getPartitionOutputDtFormat(), defaultFormatter));
-		outputFormatter.setTimeZone(mConfig.getTimeZone());
 		partitionPrefixMap = new HashMap<>();
 		String partitionMapping = config.getPartitionPrefixMapping();
 		if (null != partitionMapping) {
@@ -77,7 +78,6 @@ public class ChannelDateMessageParser extends MessageParser {
 
 	@Override
 	public String[] extractPartitions(Message message) {
-
 		JSONObject jsonObject = (JSONObject) JSONValue.parse(message.getPayload());
 		boolean prefixEnabled = mConfig.isPartitionPrefixEnabled();
 		String result[] = {defaultDate};
@@ -94,21 +94,19 @@ public class ChannelDateMessageParser extends MessageParser {
 			Object inputPattern = mConfig.getMessageTimestampInputPattern();
 			if (inputPattern != null) {
 				try {
-					/*
-					SimpleDateFormat outputFormatter = new SimpleDateFormat(
-							StringUtils.defaultIfBlank(mConfig.getPartitionOutputDtFormat(), defaultFormatter));
-					*/
 					Date dateFormat;
 					if (fieldValue instanceof Number) {
 						dateFormat = new Date(((Number) fieldValue).longValue());
 					} else {
 						SimpleDateFormat inputFormatter = new SimpleDateFormat(inputPattern.toString());
-						inputFormatter.setTimeZone(messageTimeZone);
 						dateFormat = inputFormatter.parse(fieldValue.toString());
 					}
 
 					String channel = getChannel(jsonObject);
-
+					String datasetTimeZone = this.getDatasetTz(jsonObject);
+					String timezone = Strings.isNullOrEmpty(datasetTimeZone) ? defaultDatasetTimezone : datasetTimeZone;
+					LOG.info("Backup process configured timezone is " + timezone);
+					outputFormatter.setTimeZone(TimeZone.getTimeZone(timezone));
 					String path = channel + "/";
 					result[0] = prefixEnabled
 							? getPrefix(eventValue.toString()) + path + outputFormatter.format(dateFormat)
@@ -135,6 +133,7 @@ public class ChannelDateMessageParser extends MessageParser {
 		}
 		return prefix;
 	}
+
 
 	private String getChannel(JSONObject jsonObject) {
 		String channelStr = "";
@@ -163,5 +162,14 @@ public class ChannelDateMessageParser extends MessageParser {
 		}
 		if (channelStr.isEmpty()) finalChannelStr = "others"; else finalChannelStr = channelStr;
 		return finalChannelStr.replaceAll(channelScrubRegex, "");
+	}
+
+	private String getDatasetTz(JSONObject jsonObject) {
+		try {
+			return JsonPath.parse(jsonObject).read("$." + mConfig.getDatasetTimeZoneKey(), String.class);
+		} catch (PathNotFoundException e) {
+			LOG.warn("Unable to get the tz path: " + e.getMessage());
+			return defaultDatasetTimezone;
+		}
 	}
 }
