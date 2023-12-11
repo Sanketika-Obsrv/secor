@@ -103,7 +103,7 @@ public class ChannelDateMessageParser extends MessageParser {
 
 					String channel = getChannel(jsonObject);
 					String datasetTimeZone = this.getDatasetTz(jsonObject);
-					String timezone = Strings.isNullOrEmpty(datasetTimeZone) ? mConfig.getFallbackDatasetTimeZone() : datasetTimeZone;
+					String timezone = Strings.isNullOrEmpty(datasetTimeZone) ? mConfig.getDefaultDatasetTimeZone() : datasetTimeZone;
 					LOG.info("Backup process configured timezone is " + timezone);
 					outputFormatter.setTimeZone(TimeZone.getTimeZone(timezone));
 					String path = channel + "/";
@@ -168,7 +168,7 @@ public class ChannelDateMessageParser extends MessageParser {
 			return JsonPath.parse(jsonObject).read("$." + mConfig.getDatasetTimeZoneKey(), String.class);
 		} catch (PathNotFoundException e) {
 			LOG.warn("Unable to get the tz path: " + e.getMessage());
-			return mConfig.getFallbackDatasetTimeZone();
+			return mConfig.getDefaultDatasetTimeZone();
 		}
 	}
 }

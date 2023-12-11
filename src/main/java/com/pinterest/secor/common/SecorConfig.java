@@ -717,7 +717,7 @@ public class SecorConfig {
         String timezone = getString("secor.message.timezone");
         return Strings.isNullOrEmpty(timezone) ? TimeZone.getTimeZone("UTC") : TimeZone.getTimeZone(timezone);
     }
-    public String getFallbackDatasetTimeZone(){return getString("secor.dataset.fallback.timezone");}
+    public String getDefaultDatasetTimeZone(){return getString("secor.dataset.default.timezone");}
 
     public boolean getBoolean(String name, boolean defaultValue) {
         return mProperties.getBoolean(name, defaultValue);
