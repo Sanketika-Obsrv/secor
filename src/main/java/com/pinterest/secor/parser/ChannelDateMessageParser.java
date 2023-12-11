@@ -60,7 +60,6 @@ public class ChannelDateMessageParser extends MessageParser {
 	private Map<String, String> partitionPrefixMap;
 	private static final String channelScrubRegex = "[^a-zA-Z0-9._$-]";
 	private SimpleDateFormat outputFormatter;
-	private final String defaultDatasetTimezone = "UTC";
 
 	public ChannelDateMessageParser(SecorConfig config) {
 		super(config);
@@ -104,7 +103,7 @@ public class ChannelDateMessageParser extends MessageParser {
 
 					String channel = getChannel(jsonObject);
 					String datasetTimeZone = this.getDatasetTz(jsonObject);
-					String timezone = Strings.isNullOrEmpty(datasetTimeZone) ? defaultDatasetTimezone : datasetTimeZone;
+					String timezone = Strings.isNullOrEmpty(datasetTimeZone) ? mConfig.getFallbackDatasetTimeZone() : datasetTimeZone;
 					LOG.info("Backup process configured timezone is " + timezone);
 					outputFormatter.setTimeZone(TimeZone.getTimeZone(timezone));
 					String path = channel + "/";
@@ -169,7 +168,7 @@ public class ChannelDateMessageParser extends MessageParser {
 			return JsonPath.parse(jsonObject).read("$." + mConfig.getDatasetTimeZoneKey(), String.class);
 		} catch (PathNotFoundException e) {
 			LOG.warn("Unable to get the tz path: " + e.getMessage());
-			return defaultDatasetTimezone;
+			return mConfig.getFallbackDatasetTimeZone();
 		}
 	}
 }
