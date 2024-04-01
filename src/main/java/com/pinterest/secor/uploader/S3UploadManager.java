@@ -18,23 +18,16 @@
  */
 package com.pinterest.secor.uploader;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.BasicSessionCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
+import com.amazonaws.auth.*;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.S3ClientOptions;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.s3.model.SSECustomerKey;
 import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.pinterest.secor.common.LogFilePath;
 import com.pinterest.secor.common.SecorConfig;
@@ -43,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Objects;
 
 /**
  * Manages uploads to S3 using the TransferManager class from the AWS
@@ -88,52 +82,70 @@ public class S3UploadManager extends UploadManager {
         AmazonS3 client;
         AWSCredentialsProvider provider;
 
-        ClientConfiguration clientConfiguration = new ClientConfiguration();
+//        ClientConfiguration clientConfiguration = new ClientConfiguration();
         boolean isHttpProxyEnabled = mConfig.getAwsProxyEnabled();
-
-        //proxy settings
-        if(isHttpProxyEnabled){
-            LOG.info("Http Proxy Enabled for S3UploadManager");
-            String httpProxyHost = mConfig.getAwsProxyHttpHost();
-            int httpProxyPort = mConfig.getAwsProxyHttpPort();
-            clientConfiguration.setProxyHost(httpProxyHost);
-            clientConfiguration.setProxyPort(httpProxyPort);
-        }
+//
+//        //proxy settings
+//        if(isHttpProxyEnabled){
+//            LOG.info("Http Proxy Enabled for S3UploadManager");
+//            String httpProxyHost = mConfig.getAwsProxyHttpHost();
+//            int httpProxyPort = mConfig.getAwsProxyHttpPort();
+//            clientConfiguration.setProxyHost(httpProxyHost);
+//            clientConfiguration.setProxyPort(httpProxyPort);
+//        }
 
         if (accessKey.isEmpty() || secretKey.isEmpty()) {
             provider = new DefaultAWSCredentialsProviderChain();
         } else {
             provider = new AWSCredentialsProvider() {
                 public AWSCredentials getCredentials() {
-                    if (sessionToken.isEmpty()) {
+                    if (sessionToken.isEmpty())
                         return new BasicAWSCredentials(accessKey, secretKey);
-                    } else {
-                        return new BasicSessionCredentials(accessKey, secretKey, sessionToken);
-                    }
+                    return new BasicSessionCredentials(accessKey, secretKey, sessionToken);
                 }
-                public void refresh() {}
+
+                public void refresh() {
+                }
             };
         }
 
         if (!awsRole.isEmpty()) {
-            provider = new STSAssumeRoleSessionCredentialsProvider(provider, awsRole, "secor");
+            provider = new STSAssumeRoleSessionCredentialsProvider.Builder(awsRole, "secor").build();
         }
 
-        client = new AmazonS3Client(provider, clientConfiguration);
-
-        if (mConfig.getAwsClientPathStyleAccess()) {
-            S3ClientOptions clientOptions = new S3ClientOptions();
-            clientOptions.setPathStyleAccess(true);
-            client.setS3ClientOptions(clientOptions);
+        if (mConfig.getAwsClientPathStyleAccess() && !endpoint.isEmpty()) {
+            client = AmazonS3ClientBuilder.standard()
+                    .withCredentials(provider)
+                    .enablePathStyleAccess()
+                    .disableChunkedEncoding()
+                    .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, region))
+                    .build();
+        } else if (mConfig.getAwsClientPathStyleAccess() && endpoint.isEmpty()) {
+            client = AmazonS3ClientBuilder.standard()
+                    .withRegion(region)
+                    .withCredentials(provider)
+                    .enablePathStyleAccess()
+                    .disableChunkedEncoding()
+                    .build();
+        } else if (!Objects.equals(accessKey, "") ||
+                !Objects.equals(secretKey, "") ||
+                !Objects.equals(sessionToken, "")
+        ) {
+            client = AmazonS3ClientBuilder.standard()
+                    .withRegion(region)
+                    .withCredentials(provider)
+                    .disableChunkedEncoding()
+                    .build();
+        }
+        else {
+            client = AmazonS3ClientBuilder.standard()
+                    .withRegion(region)
+                    .withCredentials(WebIdentityTokenCredentialsProvider.create())
+                    .disableChunkedEncoding()
+                    .build();
         }
 
-        if (!endpoint.isEmpty()) {
-            client.setEndpoint(endpoint);
-        } else if (!region.isEmpty()) {
-            client.setRegion(Region.getRegion(Regions.fromName(region)));
-        }
-
-        mManager = new TransferManager(client);
+        mManager = TransferManagerBuilder.standard().withS3Client(client).build();
     }
 
     public Handle<?> upload(LogFilePath localPath) throws Exception {

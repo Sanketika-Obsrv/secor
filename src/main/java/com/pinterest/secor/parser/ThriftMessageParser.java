@@ -27,6 +27,7 @@ import org.apache.thrift.protocol.TProtocolFactory;
 
 import com.pinterest.secor.common.SecorConfig;
 import com.pinterest.secor.message.Message;
+import org.apache.thrift.transport.TTransportException;
 
 /**
  * Thrift message parser extracts date partitions from thrift messages.
@@ -60,7 +61,7 @@ public class ThriftMessageParser extends TimestampedMessageParser {
 
     public ThriftMessageParser(SecorConfig config)
             throws InstantiationException, IllegalAccessException,
-            ClassNotFoundException {
+            ClassNotFoundException, TTransportException {
         super(config);
         TProtocolFactory protocolFactory = null;
         String protocolName = mConfig.getThriftProtocolClass();

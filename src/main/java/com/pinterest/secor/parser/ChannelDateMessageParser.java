@@ -57,11 +57,14 @@ public class ChannelDateMessageParser extends MessageParser {
 	private Map<String, String> partitionPrefixMap;
 	private static final String channelScrubRegex = "[^a-zA-Z0-9._$-]";
 	private SimpleDateFormat outputFormatter;
+	private TimeZone messageTimeZone;
 
 	public ChannelDateMessageParser(SecorConfig config) {
 		super(config);
+		messageTimeZone = mConfig.getMessageTimeZone();
 		outputFormatter = new SimpleDateFormat(
 				StringUtils.defaultIfBlank(mConfig.getPartitionOutputDtFormat(), defaultFormatter));
+		outputFormatter.setTimeZone(mConfig.getTimeZone());
 		partitionPrefixMap = new HashMap<>();
 		String partitionMapping = config.getPartitionPrefixMapping();
 		if (null != partitionMapping) {
@@ -100,6 +103,7 @@ public class ChannelDateMessageParser extends MessageParser {
 						dateFormat = new Date(((Number) fieldValue).longValue());
 					} else {
 						SimpleDateFormat inputFormatter = new SimpleDateFormat(inputPattern.toString());
+						inputFormatter.setTimeZone(messageTimeZone);
 						dateFormat = inputFormatter.parse(fieldValue.toString());
 					}
 
