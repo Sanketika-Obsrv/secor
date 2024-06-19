@@ -1000,6 +1000,67 @@
             </dependencies>
         </profile>
         <profile>
+            <id>build-vm-release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <configuration>
+                            <excludes>
+                                <exclude>com/pinterest/secor/timestamp/*</exclude>
+                                <exclude>com/pinterest/secor/reader/LegacyKafkaMessageIterator.java</exclude>
+                                <exclude>com/pinterest/secor/common/LegacyKafkaClient.java</exclude>
+                            </excludes>
+                            <testExcludes>
+                                <exclude>com/pinterest/secor/timestamp/*</exclude>
+                            </testExcludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                    <version>2.6.3</version>
+                </dependency>
+                <dependency>
+                    <groupId>com.twitter</groupId>
+                    <artifactId>ostrich_2.11</artifactId>
+                    <version>9.27.0</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.twitter</groupId>
+                            <artifactId>util-eval_2.11</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>com.twitter</groupId>
+                    <artifactId>util-eval_2.11</artifactId>
+                    <version>6.43.0</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.scala-lang</groupId>
+                            <artifactId>scala-compiler</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>org.scala-lang</groupId>
+                    <artifactId>scala-compiler</artifactId>
+                    <version>2.11.12</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka_2.11</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
             <id>release</id>
             <!-- Matches kafka-2.0.0 , just this one includes gpg signing, javadoc etc -->
             <build>
