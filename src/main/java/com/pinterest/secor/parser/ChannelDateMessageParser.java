@@ -81,9 +81,9 @@ public class ChannelDateMessageParser extends MessageParser {
 
 		if (jsonObject != null) {
 
-			Object fieldValue = jsonObject.get(mConfig.getMessageTimestampName());
+			Object fieldValue = this.getTimeStamp(jsonObject, mConfig.getMessageTimestampName());
 			if (fieldValue == null)
-				fieldValue = jsonObject.get(mConfig.getFallbackMessageTimestampName());
+				fieldValue = this.getTimeStamp(jsonObject, mConfig.getFallbackMessageTimestampName());
 			if (fieldValue == null)
 				fieldValue = System.currentTimeMillis();
 
@@ -95,14 +95,18 @@ public class ChannelDateMessageParser extends MessageParser {
 					SimpleDateFormat outputFormatter = new SimpleDateFormat(
 							StringUtils.defaultIfBlank(mConfig.getPartitionOutputDtFormat(), defaultFormatter));
 					*/
-					Date dateFormat;
+					Date dateFormat = null;
 					if (fieldValue instanceof Number) {
 						dateFormat = new Date(((Number) fieldValue).longValue());
-					} else {
+					} else if(fieldValue instanceof String) {
 						SimpleDateFormat inputFormatter = new SimpleDateFormat(inputPattern.toString());
 						dateFormat = inputFormatter.parse(fieldValue.toString());
 					}
-
+					if (dateFormat == null) {
+                        LOG.error("Invalid timestamp value: {}", fieldValue);
+						return result; // Return default if parsing fails
+					}
+					
 					String channel = getChannel(jsonObject);
 
 					String path = channel + "/";
@@ -130,6 +134,28 @@ public class ChannelDateMessageParser extends MessageParser {
 			}
 		}
 		return prefix;
+	}
+	
+	private Object getTimeStamp(JSONObject jsonObject, String timestampKey) {
+		if (jsonObject == null) {
+			LOG.error("Input JSON object is null. Cannot extract timestamp.");
+			return null;
+		}
+		String[] timeStampKeys = timestampKey.split("\\.");
+		if (timeStampKeys.length == 0) {
+            LOG.warn("No timestamp keys provided in the configuration: {}", timestampKey);
+			return null;
+		}
+		String jsonPath = "$." + String.join(".", timeStampKeys);
+		Object timeStampValue = null;
+		try {
+			timeStampValue = JsonPath.parse(jsonObject.toString()).read(jsonPath, Object.class);
+		} catch (PathNotFoundException e) {
+            LOG.warn("Path not found for key: {}, Error: {}", timestampKey, e.getMessage());
+		} catch (Exception e) {
+            LOG.error("Unexpected error while parsing JSON for key: {}", timestampKey, e);
+		}
+		return timeStampValue;
 	}
 
 	private String getChannel(JSONObject jsonObject) {
