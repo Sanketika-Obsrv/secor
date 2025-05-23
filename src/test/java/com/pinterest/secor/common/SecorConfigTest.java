@@ -39,7 +39,7 @@ public class SecorConfigTest {
 
         SecorConfig secorConfig = new SecorConfig(properties);
         assertEquals("true", secorConfig.getDualCommitEnabled());
-        assertEquals("zookeeper", secorConfig.getOffsetsStorage());
+        assertEquals("kafka", secorConfig.getOffsetsStorage());
     }
 
     @Test

@@ -18,13 +18,7 @@
  */
 package com.pinterest.secor.uploader;
 
-import com.pinterest.secor.common.FileRegistry;
-import com.pinterest.secor.common.LogFilePath;
-import com.pinterest.secor.common.OffsetTracker;
-import com.pinterest.secor.common.SecorConfig;
-import com.pinterest.secor.common.SecorConstants;
-import com.pinterest.secor.common.TopicPartition;
-import com.pinterest.secor.common.ZookeeperConnector;
+import com.pinterest.secor.common.*;
 import com.pinterest.secor.io.FileReader;
 import com.pinterest.secor.io.FileWriter;
 import com.pinterest.secor.io.KeyValue;
@@ -43,7 +37,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.IOException;
 import java.util.HashSet;
 
 /**
@@ -52,7 +45,7 @@ import java.util.HashSet;
  * @author Pawel Garbacki (pawel@pinterest.com)
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ FileUtil.class, IdUtil.class , DateTime.class})
+@PrepareForTest({FileUtil.class, IdUtil.class, DateTime.class})
 public class UploaderTest extends TestCase {
     private static class TestUploader extends Uploader {
         private FileReader mReader;
@@ -60,9 +53,8 @@ public class UploaderTest extends TestCase {
         public TestUploader(SecorConfig config, OffsetTracker offsetTracker,
                             FileRegistry fileRegistry,
                             UploadManager uploadManager,
-                            MessageReader messageReader,
-                            ZookeeperConnector zookeeperConnector) {
-            init(config, offsetTracker, fileRegistry, uploadManager, messageReader, zookeeperConnector,
+                            MessageReader messageReader) {
+            init(config, offsetTracker, fileRegistry, uploadManager, messageReader,
                     Mockito.mock(MetricCollector.class), null);
             mReader = Mockito.mock(FileReader.class);
         }
@@ -85,9 +77,8 @@ public class UploaderTest extends TestCase {
     private SecorConfig mConfig;
     private OffsetTracker mOffsetTracker;
     private FileRegistry mFileRegistry;
-    private ZookeeperConnector mZookeeperConnector;
     private UploadManager mUploadManager;
-    private MessageReader messageReader;
+    private MessageReader messageReader = Mockito.mock(MessageReader.class);
 
     private TestUploader mUploader;
 
@@ -103,8 +94,7 @@ public class UploaderTest extends TestCase {
         mConfig = Mockito.mock(SecorConfig.class);
         Mockito.when(mConfig.getLocalPath()).thenReturn("/some_parent_dir");
         Mockito.when(mConfig.getMaxFileSizeBytes()).thenReturn(10L);
-        Mockito.when(mConfig.getZookeeperPath()).thenReturn("/");
-        Mockito.when(mConfig.getOffsetsStorage()).thenReturn(SecorConstants.KAFKA_OFFSETS_STORAGE_ZK);
+        Mockito.when(mConfig.getOffsetsStorage()).thenReturn(SecorConstants.KAFKA_OFFSETS_STORAGE_KAFKA);
 
         mOffsetTracker = Mockito.mock(OffsetTracker.class);
 
@@ -117,16 +107,14 @@ public class UploaderTest extends TestCase {
 
         mUploadManager = new HadoopS3UploadManager(mConfig);
 
-        mZookeeperConnector = Mockito.mock(ZookeeperConnector.class);
-        mUploader = new TestUploader(mConfig, mOffsetTracker, mFileRegistry, mUploadManager, messageReader,
-                mZookeeperConnector);
+        mUploader = new TestUploader(mConfig, mOffsetTracker, mFileRegistry, mUploadManager, messageReader);
     }
 
     public void testUploadAtTime() throws Exception {
         final int minuteUploadMark = 1;
 
         PowerMockito.mockStatic(DateTime.class);
-        PowerMockito.when(DateTime.now()).thenReturn(new DateTime(2016,7,27,0,minuteUploadMark,0));
+        PowerMockito.when(DateTime.now()).thenReturn(new DateTime(2016, 7, 27, 0, minuteUploadMark, 0));
         Mockito.when(mConfig.getUploadMinuteMark()).thenReturn(minuteUploadMark);
 
         mockS3Configs();
@@ -141,8 +129,6 @@ public class UploaderTest extends TestCase {
                 thenReturn("s3a://some_bucket/some_s3_parent_dir");
         mUploader.applyPolicy(false);
 
-        final String lockPath = "/secor/locks/some_topic/0";
-        Mockito.verify(mZookeeperConnector).lock(lockPath);
         PowerMockito.verifyStatic(FileUtil.class);
         FileUtil.moveToCloud(
                 "/some_parent_dir/some_topic/some_partition/some_other_partition/"
@@ -150,11 +136,8 @@ public class UploaderTest extends TestCase {
                 "s3a://some_bucket/some_s3_parent_dir/some_topic/some_partition/"
                         + "some_other_partition/10_0_00000000000000000010");
         Mockito.verify(mFileRegistry).deleteTopicPartition(mTopicPartition);
-        Mockito.verify(mZookeeperConnector).setCommittedOffsetCount(
-                mTopicPartition, 1L);
         Mockito.verify(mOffsetTracker).setCommittedOffsetCount(mTopicPartition,
                 1L);
-        Mockito.verify(mZookeeperConnector).unlock(lockPath);
     }
 
     public void testUploadWhenManyFiles() throws Exception {
@@ -165,7 +148,6 @@ public class UploaderTest extends TestCase {
         HashSet<LogFilePath> logFilePaths = new HashSet<LogFilePath>();
         logFilePaths.add(mLogFilePath);
         Mockito.when(mFileRegistry.getActiveFileCount()).thenReturn(1);
-        // Hard mock other upload conditions for false
         Mockito.when(mFileRegistry.getModificationAgeSec(mTopicPartition)).thenReturn(-1L);
         Mockito.when(mFileRegistry.getSize(mTopicPartition)).thenReturn(-1L);
         Mockito.when(mFileRegistry.getPaths(mTopicPartition)).thenReturn(
@@ -176,8 +158,6 @@ public class UploaderTest extends TestCase {
                 thenReturn("s3a://some_bucket/some_s3_parent_dir");
         mUploader.applyPolicy(false);
 
-        final String lockPath = "/secor/locks/some_topic/0";
-        Mockito.verify(mZookeeperConnector).lock(lockPath);
         PowerMockito.verifyStatic(FileUtil.class);
         FileUtil.moveToCloud(
                 "/some_parent_dir/some_topic/some_partition/some_other_partition/"
@@ -185,11 +165,8 @@ public class UploaderTest extends TestCase {
                 "s3a://some_bucket/some_s3_parent_dir/some_topic/some_partition/"
                         + "some_other_partition/10_0_00000000000000000010");
         Mockito.verify(mFileRegistry).deleteTopicPartition(mTopicPartition);
-        Mockito.verify(mZookeeperConnector).setCommittedOffsetCount(
-                mTopicPartition, 1L);
         Mockito.verify(mOffsetTracker).setCommittedOffsetCount(mTopicPartition,
                 1L);
-        Mockito.verify(mZookeeperConnector).unlock(lockPath);
     }
 
     public void testNoUploadWhenManyFiles() throws Exception {
@@ -200,7 +177,6 @@ public class UploaderTest extends TestCase {
         HashSet<LogFilePath> logFilePaths = new HashSet<LogFilePath>();
         logFilePaths.add(mLogFilePath);
         Mockito.when(mFileRegistry.getActiveFileCount()).thenReturn(1);
-        // Hard mock other upload conditions for false
         Mockito.when(mFileRegistry.getModificationAgeSec(mTopicPartition)).thenReturn(-1L);
         Mockito.when(mFileRegistry.getSize(mTopicPartition)).thenReturn(-1L);
         Mockito.when(mFileRegistry.getPaths(mTopicPartition)).thenReturn(
@@ -212,18 +188,15 @@ public class UploaderTest extends TestCase {
 
     public void testUploadFiles() throws Exception {
         Mockito.when(
-                mZookeeperConnector.getCommittedOffsetCount(mTopicPartition))
+                        mOffsetTracker.setCommittedOffsetCount(mTopicPartition, 11L))
                 .thenReturn(11L);
         Mockito.when(
-                mOffsetTracker.setCommittedOffsetCount(mTopicPartition, 11L))
-                .thenReturn(11L);
-        Mockito.when(
-                mOffsetTracker.setCommittedOffsetCount(mTopicPartition, 21L))
+                        mOffsetTracker.setCommittedOffsetCount(mTopicPartition, 21L))
                 .thenReturn(11L);
         Mockito.when(mOffsetTracker.getLastSeenOffset(mTopicPartition))
                 .thenReturn(20L);
         Mockito.when(
-                mOffsetTracker.getTrueCommittedOffsetCount(mTopicPartition))
+                        mOffsetTracker.getTrueCommittedOffsetCount(mTopicPartition))
                 .thenReturn(11L);
 
 
@@ -239,8 +212,6 @@ public class UploaderTest extends TestCase {
                 thenReturn("s3a://some_bucket/some_s3_parent_dir");
         mUploader.applyPolicy(false);
 
-        final String lockPath = "/secor/locks/some_topic/0";
-        Mockito.verify(mZookeeperConnector).lock(lockPath);
         PowerMockito.verifyStatic(FileUtil.class);
         FileUtil.moveToCloud(
                 "/some_parent_dir/some_topic/some_partition/some_other_partition/"
@@ -248,19 +219,13 @@ public class UploaderTest extends TestCase {
                 "s3a://some_bucket/some_s3_parent_dir/some_topic/some_partition/"
                         + "some_other_partition/10_0_00000000000000000010");
         Mockito.verify(mFileRegistry).deleteTopicPartition(mTopicPartition);
-        Mockito.verify(mZookeeperConnector).setCommittedOffsetCount(
-                mTopicPartition, 21L);
         Mockito.verify(mOffsetTracker).setCommittedOffsetCount(mTopicPartition,
                 21L);
-        Mockito.verify(mZookeeperConnector).unlock(lockPath);
     }
 
     public void testDeleteTopicPartition() throws Exception {
         Mockito.when(
-                mZookeeperConnector.getCommittedOffsetCount(mTopicPartition))
-                .thenReturn(31L);
-        Mockito.when(
-                mOffsetTracker.setCommittedOffsetCount(mTopicPartition, 30L))
+                        mOffsetTracker.setCommittedOffsetCount(mTopicPartition, 30L))
                 .thenReturn(11L);
         Mockito.when(mOffsetTracker.getLastSeenOffset(mTopicPartition))
                 .thenReturn(20L);
@@ -271,20 +236,16 @@ public class UploaderTest extends TestCase {
     }
 
     public void testTrimFiles() throws Exception {
-        Mockito.when(
-                mZookeeperConnector.getCommittedOffsetCount(mTopicPartition))
-                .thenReturn(21L);
-        // The second time it's called, it returns 21L because of the first call.
-        Mockito.when(
-                mOffsetTracker.setCommittedOffsetCount(mTopicPartition, 21L))
-                .thenReturn(20L, 21L);
-        Mockito.when(mOffsetTracker.getLastSeenOffset(mTopicPartition))
-                .thenReturn(21L);
+
+        Mockito.when(mConfig.getCloudService()).thenReturn("S3");
+        Mockito.when(mOffsetTracker.getTrueCommittedOffsetCount(mTopicPartition)).thenReturn(21L);
+        Mockito.when(mOffsetTracker.setCommittedOffsetCount(mTopicPartition, 21L)).thenReturn(20L, 21L);
+        Mockito.when(mOffsetTracker.getLastSeenOffset(mTopicPartition)).thenReturn(21L);
 
         HashSet<LogFilePath> logFilePaths = new HashSet<LogFilePath>();
         logFilePaths.add(mLogFilePath);
-        Mockito.when(mFileRegistry.getPaths(mTopicPartition)).thenReturn(
-                logFilePaths);
+        HashSet<LogFilePath> newlogFilePaths = new HashSet<LogFilePath>();
+        Mockito.when(mFileRegistry.getPaths(mTopicPartition)).thenReturn(logFilePaths, newlogFilePaths);
 
         FileReader reader = mUploader.getReader();
 
@@ -301,8 +262,7 @@ public class UploaderTest extends TestCase {
         });
 
         PowerMockito.mockStatic(IdUtil.class);
-        Mockito.when(IdUtil.getLocalMessageDir())
-                .thenReturn("some_message_dir");
+        Mockito.when(IdUtil.getLocalMessageDir()).thenReturn("some_message_dir");
 
         FileWriter writer = Mockito.mock(FileWriter.class);
         LogFilePath dstLogFilePath = new LogFilePath(
@@ -324,6 +284,6 @@ public class UploaderTest extends TestCase {
         Mockito.when(mConfig.getCloudService()).thenReturn("S3");
         Mockito.when(mConfig.getS3Bucket()).thenReturn("some_bucket");
         Mockito.when(mConfig.getS3Path()).thenReturn("some_s3_parent_dir");
-        Mockito.when(mConfig.getOffsetsStorage()).thenReturn(SecorConstants.KAFKA_OFFSETS_STORAGE_ZK);
+        Mockito.when(mConfig.getOffsetsStorage()).thenReturn(SecorConstants.KAFKA_OFFSETS_STORAGE_KAFKA);
     }
 }

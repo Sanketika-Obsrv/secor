@@ -231,4 +231,15 @@ public class FileRegistryTest extends TestCase {
 
         assertEquals(90, mRegistry.getModificationAgeSec(mTopicPartition));
     }
+
+    public void testGetAllLocalLogFiles() throws Exception {
+        createWriter();
+        // Add a second file in a different partition
+        LogFilePath anotherPath = new LogFilePath("/some_parent_dir", "/some_parent_dir/another_topic/part/10_1_00000000000000000200");
+        mRegistry.getOrCreateWriter(anotherPath, null);
+        Collection<LogFilePath> allFiles = mRegistry.getAllLocalLogFiles();
+        assertEquals(2, allFiles.size());
+        assertTrue(allFiles.contains(mLogFilePath));
+        assertTrue(allFiles.contains(anotherPath));
+    }
 }

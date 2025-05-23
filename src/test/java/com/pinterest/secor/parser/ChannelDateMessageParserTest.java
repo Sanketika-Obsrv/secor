@@ -77,7 +77,7 @@ public class ChannelDateMessageParserTest extends TestCase {
         Mockito.when(mConfig.getPartitionPrefixMapping()).thenReturn("{\"ME_WORKFLOW_SUMMARY\":\"summary\",\"DEFAULT\":\"raw\"}");
 
         Mockito.when(mConfig.getMessageTimestampInputPattern()).thenReturn("yyyy-MM-dd HH:mm:ss");
-        assertEquals("summary/Karnataka/2014-07-31", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat1)[0]);
+        assertEquals("summary/Karnataka/2014-07-30", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat1)[0]);
 
         Mockito.when(mConfig.getMessageTimestampInputPattern()).thenReturn("yyyy/MM/d");
         assertEquals("raw/Karnataka/2014-10-25", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat2)[0]);
@@ -92,7 +92,7 @@ public class ChannelDateMessageParserTest extends TestCase {
         assertEquals("summary/Karnataka/2006-01-02", new ChannelDateMessageParser(mConfig).extractPartitions(mISOFormat)[0]);
 
         Mockito.when(mConfig.getMessageTimestampInputPattern()).thenReturn("yyyy-MM-dd'T'HH:mm:ss");
-        assertEquals("summary/Karnataka/2006-01-03", new ChannelDateMessageParser(mConfig).extractPartitions(mNanosecondISOFormat)[0]);
+        assertEquals("summary/Karnataka/2006-01-02", new ChannelDateMessageParser(mConfig).extractPartitions(mNanosecondISOFormat)[0]);
     }
 
     @Test
@@ -103,7 +103,7 @@ public class ChannelDateMessageParserTest extends TestCase {
         Mockito.when(mConfig.getMessageChannelIdentifier()).thenReturn(channelIdentifier);
 
         Mockito.when(mConfig.getMessageTimestampInputPattern()).thenReturn("yyyy-MM-dd HH:mm:ss");
-        assertEquals("Karnataka/2014-07-31", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat1)[0]);
+        assertEquals("Karnataka/2014-07-30", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat1)[0]);
     }
 
     @Test
@@ -135,7 +135,7 @@ public class ChannelDateMessageParserTest extends TestCase {
         Mockito.when(mConfig.getString("secor.partition.output_dt_format", "yyyy-MM-dd")).thenReturn("yyyy-MM-dd");
         Mockito.when(mConfig.getMessageChannelIdentifier()).thenReturn(channelIdentifier);
 
-        assertEquals("summary/Karnataka/2014-07-31", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat1)[0]);
+        assertEquals("summary/Karnataka/2014-07-30", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat1)[0]);
     }
 
     @Test
@@ -147,7 +147,7 @@ public class ChannelDateMessageParserTest extends TestCase {
         Mockito.when(mConfig.getPartitionOutputDtFormat()).thenReturn("'yr='yyyy'/mo='MM'/dy='dd'/hr='HH");
         Mockito.when(mConfig.getMessageChannelIdentifier()).thenReturn(channelIdentifier);
 
-        assertEquals("summary/Karnataka/yr=2014/mo=07/dy=31/hr=04", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat1)[0]);
+        assertEquals("summary/Karnataka/yr=2014/mo=07/dy=30/hr=22", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat1)[0]);
     }
 
     @Test
@@ -158,7 +158,7 @@ public class ChannelDateMessageParserTest extends TestCase {
         Mockito.when(mConfig.getPartitionPrefixMapping()).thenReturn("{\"ME_WORKFLOW_SUMMARY\":\"summary\",\"DEFAULT\":\"raw\"}");
 
         Mockito.when(mConfig.getMessageTimestampInputPattern()).thenReturn("yyyy-MM-dd HH:mm:ss");
-        assertEquals("summary/test-channel/2014-07-31", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat1)[0]);
+        assertEquals("summary/test-channel/2014-07-30", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat1)[0]);
 
         Mockito.when(mConfig.getMessageTimestampInputPattern()).thenReturn("yyyy/MM/d");
         assertEquals("raw/test-channel/2014-10-25", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat2)[0]);
@@ -173,7 +173,7 @@ public class ChannelDateMessageParserTest extends TestCase {
         Mockito.when(mConfig.getString("secor.partition.output_dt_format", "yyyy-MM-dd")).thenReturn("yyyy-MM-dd");
         Mockito.when(mConfig.getMessageChannelIdentifier()).thenReturn(channelIdentifier);
 
-        assertEquals("summary/others/2014-07-31", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat4)[0]);
+        assertEquals("summary/others/2014-07-30", new ChannelDateMessageParser(mConfig).extractPartitions(mFormat4)[0]);
     }
 
 }

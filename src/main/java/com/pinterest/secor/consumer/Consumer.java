@@ -92,12 +92,20 @@ public class Consumer extends Thread {
         mMessageReader = new MessageReader(mConfig, mOffsetTracker, mKafkaMessageIterator);
 
         FileRegistry fileRegistry = new FileRegistry(mConfig);
+        // --- Stateless recovery: delete all unuploaded log files on startup ---
+        for (LogFilePath path : fileRegistry.getAllLocalLogFiles()) {
+            try {
+                fileRegistry.deletePath(path);
+                LOG.info("Deleted unuploaded log file on startup: {}", path.getLogFilePath());
+            } catch (Exception e) {
+                LOG.warn("Failed to delete log file on startup: {}", path.getLogFilePath(), e);
+            }
+        }
+        // ---------------------------------------------------------------------
         UploadManager uploadManager = ReflectionUtil.createUploadManager(mConfig.getUploadManagerClass(), mConfig);
-
         mUploader = ReflectionUtil.createUploader(mConfig.getUploaderClass());
         mUploader.init(mConfig, mOffsetTracker, fileRegistry, uploadManager, mMessageReader, mMetricCollector,
                 mDeterministicUploadPolicyTracker);
-
         if (mKafkaMessageIterator instanceof RebalanceSubscriber) {
             ((RebalanceSubscriber) mKafkaMessageIterator).subscribe(new RebalanceHandler(mUploader, fileRegistry, mOffsetTracker), mConfig);
             isLegacyConsumer = false;
@@ -106,7 +114,6 @@ public class Consumer extends Thread {
         mMessageParser = ReflectionUtil.createMessageParser(mConfig.getMessageParserClass(), mConfig);
         mMessageTransformer = ReflectionUtil.createMessageTransformer(mConfig.getMessageTransformerClass(), mConfig);
         mUnparsableMessages = 0.;
-
         mUploadOnShutdown = mConfig.getUploadOnShutdown();
         if (mUploadOnShutdown) {
             if (mDeterministicUploadPolicyTracker != null) {
@@ -171,6 +178,7 @@ public class Consumer extends Thread {
                         nMessages++ % checkMessagesPerSecond == 0 ||
                         (now - lastChecked) > checkEveryNSeconds * 1000) {
                     lastChecked = now;
+
                     checkUploadPolicy(false);
                 }
             }

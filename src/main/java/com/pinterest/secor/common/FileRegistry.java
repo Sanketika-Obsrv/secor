@@ -295,4 +295,16 @@ public class FileRegistry {
     public int getActiveFileCount() {
         return mWriters.size();
     }
+
+    /**
+     * Get all local log files currently tracked by FileRegistry, across all topic partitions.
+     * @return Collection of all LogFilePath objects.
+     */
+    public Collection<LogFilePath> getAllLocalLogFiles() {
+        Set<LogFilePath> allFiles = new HashSet<>();
+        for (HashSet<LogFilePath> files : mFiles.values()) {
+            allFiles.addAll(files);
+        }
+        return allFiles;
+    }
 }
