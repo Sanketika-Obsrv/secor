@@ -1,18 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.pinterest.secor.io.impl;
 
@@ -21,6 +23,7 @@ import static org.junit.Assert.assertArrayEquals;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.parquet.hadoop.ParquetWriter;
 
 import org.apache.thrift.TDeserializer;
@@ -29,6 +32,7 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.io.Files;
@@ -44,6 +48,24 @@ import com.pinterest.secor.util.ReflectionUtil;
 import junit.framework.TestCase;
 
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({
+        "com.ctc.wstx.stax.*",
+        "com.ctc.wstx.io.*",
+        "com.sun.*",
+        "com.sun.org.apache.xalan.",
+        "com.sun.org.apache.xerces.",
+        "com.sun.xml.internal.stream.*",
+        "javax.activation.*",
+        "javax.management.",
+        "javax.xml.",
+        "javax.xml.stream.*",
+        "javax.security.auth.login.*",
+        "javax.security.auth.spi.*",
+        "org.apache.hadoop.security.*",
+        "org.codehaus.stax2.*",
+        "org.w3c.",
+        "org.xml.",
+        "org.w3c.dom."})
 public class ThriftParquetFileReaderWriterFactoryTest extends TestCase {
 
     private SecorConfig config;
@@ -61,7 +83,7 @@ public class ThriftParquetFileReaderWriterFactoryTest extends TestCase {
         Mockito.when(config.getFileReaderWriterFactory())
                 .thenReturn(ThriftParquetFileReaderWriterFactory.class.getName());
         Mockito.when(config.getThriftProtocolClass())
-        .thenReturn(TCompactProtocol.class.getName());
+                .thenReturn(TCompactProtocol.class.getName());
         Mockito.when(ParquetUtil.getParquetBlockSize(config))
                 .thenReturn(ParquetWriter.DEFAULT_BLOCK_SIZE);
         Mockito.when(ParquetUtil.getParquetPageSize(config))
@@ -91,7 +113,7 @@ public class ThriftParquetFileReaderWriterFactoryTest extends TestCase {
         FileReader fileReader = ReflectionUtil.createFileReader(config.getFileReaderWriterFactory(), tempLogFilePath,
                 null, config);
         TDeserializer deserializer = new TDeserializer(new TCompactProtocol.Factory());
-        
+
         KeyValue kvout = fileReader.next();
         assertEquals(kv1.getOffset(), kvout.getOffset());
         assertArrayEquals(kv1.getValue(), kvout.getValue());

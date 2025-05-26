@@ -1,18 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.pinterest.secor.common;
 
@@ -20,13 +22,16 @@ import com.pinterest.secor.io.FileWriter;
 import com.pinterest.secor.util.FileUtil;
 import com.pinterest.secor.util.ReflectionUtil;
 import com.pinterest.secor.util.StatsUtil;
-
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * FileRegistry keeps track of local log files currently being appended to and the associated
@@ -99,6 +104,7 @@ public class FileRegistry {
      * Retrieve an existing writer for a given path.
      * @param path The path to retrieve writer for.
      * @return Writer for a given path or null if no writer has been created yet.
+     * @throws Exception on error
      */
     public FileWriter getWriter(LogFilePath path)
             throws Exception {
@@ -110,7 +116,7 @@ public class FileRegistry {
      * @param path The path to retrieve writer for.
      * @param codec Optional compression codec.
      * @return Writer for a given path.
-     * @throws Exception 
+     * @throws Exception on error
      */
     public FileWriter getOrCreateWriter(LogFilePath path, CompressionCodec codec)
             throws Exception {
@@ -133,11 +139,6 @@ public class FileRegistry {
             mWriters.put(path, writer);
             mCreationTimes.put(path, System.currentTimeMillis() / 1000L);
             LOG.debug("created writer for path {}", path.getLogFilePath());
-            LOG.debug("Register deleteOnExit for path {}", path.getLogFilePath());
-            FileUtil.deleteOnExit(path.getLogFileParentDir());
-            FileUtil.deleteOnExit(path.getLogFileDir());
-            FileUtil.deleteOnExit(path.getLogFilePath());
-            FileUtil.deleteOnExit(path.getLogFileCrcPath());
         }
         return writer;
     }
@@ -145,19 +146,19 @@ public class FileRegistry {
     /**
      * Delete a given path, the underlying file, and the corresponding writer.
      * @param path The path to delete.
-     * @throws IOException
+     * @throws IOException on error
      */
     public void deletePath(LogFilePath path) throws IOException {
         TopicPartitionGroup topicPartition = new TopicPartitionGroup(path.getTopic(),
-                                                           path.getKafkaPartitions());
+                path.getKafkaPartitions());
         HashSet<LogFilePath> paths = mFiles.get(topicPartition);
         paths.remove(path);
         if (paths.isEmpty()) {
             mFiles.remove(topicPartition);
             StatsUtil.clearLabel("secor.size." + topicPartition.getTopic() + "." +
-                                 topicPartition.getPartitions()[0]);
+                    topicPartition.getPartitions()[0]);
             StatsUtil.clearLabel("secor.modification_age_sec." + topicPartition.getTopic() + "." +
-                                 topicPartition.getPartitions()[0]);
+                    topicPartition.getPartitions()[0]);
         }
         deleteWriter(path);
         FileUtil.delete(path.getLogFilePath());
@@ -167,7 +168,7 @@ public class FileRegistry {
     /**
      * Delete all paths, files, and writers in a given topic partition.
      * @param topicPartition The topic partition to remove.
-     * @throws IOException
+     * @throws IOException on error
      */
     public void deleteTopicPartition(TopicPartition topicPartition) throws IOException {
         deleteTopicPartitionGroup((new TopicPartitionGroup(topicPartition)));
@@ -187,6 +188,7 @@ public class FileRegistry {
     /**
      * Delete writer for a given topic partition.  Underlying file is not removed.
      * @param path The path to remove the writer for.
+     * @throws IOException on error
      */
     public void deleteWriter(LogFilePath path) throws IOException {
         FileWriter writer = mWriters.get(path);
@@ -203,6 +205,7 @@ public class FileRegistry {
     /**
      * Delete all writers in a given topic partition.  Underlying files are not removed.
      * @param topicPartition The topic partition to remove the writers for.
+     * @throws IOException on error
      */
     public void deleteWriters(TopicPartition topicPartition) throws IOException {
         deleteWriters(new TopicPartitionGroup(topicPartition));
@@ -212,7 +215,7 @@ public class FileRegistry {
         HashSet<LogFilePath> paths = mFiles.get(topicPartitionGroup);
         if (paths == null) {
             LOG.warn("No paths found for topic {} partition {}", topicPartitionGroup.getTopic(),
-                Arrays.toString(topicPartitionGroup.getPartitions()));
+                    Arrays.toString(topicPartitionGroup.getPartitions()));
         } else {
             for (LogFilePath path : paths) {
                 deleteWriter(path);
@@ -225,7 +228,7 @@ public class FileRegistry {
      * @param topicPartition The topic partition to get the size for.
      * @return Aggregated size of files in the topic partition or 0 if the topic partition does
      *     not contain any files.
-     * @throws IOException
+     * @throws IOException on error
      */
     public long getSize(TopicPartition topicPartition) throws IOException {
         return getSize(new TopicPartitionGroup(topicPartition));
@@ -241,7 +244,7 @@ public class FileRegistry {
             }
         }
         StatsUtil.setLabel("secor.size." + topicPartitionGroup.getTopic() + "." +
-            Arrays.toString(topicPartitionGroup.getPartitions()), Long.toString(result));
+                Arrays.toString(topicPartitionGroup.getPartitions()), Long.toString(result));
         return result;
     }
 
@@ -250,13 +253,12 @@ public class FileRegistry {
      * @param topicPartition The topic partition to get the age of.
      * @return Age of the most recently created file in the topic partition or -1 if the partition
      *     does not contain any files.
-     * @throws IOException
      */
-    public long getModificationAgeSec(TopicPartition topicPartition) throws IOException {
+    public long getModificationAgeSec(TopicPartition topicPartition) {
         return getModificationAgeSec(new TopicPartitionGroup(topicPartition));
     }
 
-    public long getModificationAgeSec(TopicPartitionGroup topicPartitionGroup) throws IOException {
+    public long getModificationAgeSec(TopicPartitionGroup topicPartitionGroup) {
         long now = System.currentTimeMillis() / 1000L;
         long result;
         if (mConfig.getFileAgeYoungest()) {
@@ -286,7 +288,11 @@ public class FileRegistry {
             result = -1;
         }
         StatsUtil.setLabel("secor.modification_age_sec." + topicPartitionGroup.getTopic() + "." +
-            Arrays.toString(topicPartitionGroup.getPartitions()), Long.toString(result));
+                Arrays.toString(topicPartitionGroup.getPartitions()), Long.toString(result));
         return result;
+    }
+
+    public int getActiveFileCount() {
+        return mWriters.size();
     }
 }

@@ -1,20 +1,21 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 package com.pinterest.secor.parser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,7 +63,7 @@ public class MessagePackParserTest extends TestCase {
         HashMap<String, Object> mapWithSecondTimestamp = new HashMap<String, Object>();
         mapWithSecondTimestamp.put("ts", 1405970352);
         mMessageWithSecondsTimestamp = new Message("test", 0, 0, null,
-                mObjectMapper.writeValueAsBytes(mapWithSecondTimestamp), timestamp);
+                mObjectMapper.writeValueAsBytes(mapWithSecondTimestamp), timestamp, null);
 
         HashMap<String, Object> mapWithMillisTimestamp = new HashMap<String, Object>();
         mapWithMillisTimestamp.put("ts", 1405970352123l);
@@ -70,7 +71,7 @@ public class MessagePackParserTest extends TestCase {
         mapWithMillisTimestamp.put("email", "alice@example.com");
         mapWithMillisTimestamp.put("age", 27);
         mMessageWithMillisTimestamp = new Message("test", 0, 0, null,
-                mObjectMapper.writeValueAsBytes(mapWithMillisTimestamp), timestamp);
+                mObjectMapper.writeValueAsBytes(mapWithMillisTimestamp), timestamp, null);
 
 
         HashMap<String, Object> mapWithMillisFloatTimestamp = new HashMap<String, Object>();
@@ -79,7 +80,7 @@ public class MessagePackParserTest extends TestCase {
         mapWithMillisFloatTimestamp.put("email", "bob@example.com");
         mapWithMillisFloatTimestamp.put("age", 35);
         mMessageWithMillisFloatTimestamp = new Message("test", 0, 0, null,
-                mObjectMapper.writeValueAsBytes(mapWithMillisFloatTimestamp), timestamp);
+                mObjectMapper.writeValueAsBytes(mapWithMillisFloatTimestamp), timestamp, null);
 
         HashMap<String, Object> mapWithMillisStringTimestamp = new HashMap<String, Object>();
         mapWithMillisStringTimestamp.put("ts", "1405970352123");
@@ -87,7 +88,7 @@ public class MessagePackParserTest extends TestCase {
         mapWithMillisStringTimestamp.put("email", "charlie@example.com");
         mapWithMillisStringTimestamp.put("age", 67);
         mMessageWithMillisStringTimestamp = new Message("test", 0, 0, null,
-                mObjectMapper.writeValueAsBytes(mapWithMillisStringTimestamp), timestamp);
+                mObjectMapper.writeValueAsBytes(mapWithMillisStringTimestamp), timestamp, null);
     }
 
     @Test
@@ -122,7 +123,7 @@ public class MessagePackParserTest extends TestCase {
         HashMap<String, Object> mapWithoutTimestamp = new HashMap<String, Object>();
         mapWithoutTimestamp.put("email", "mary@example.com");
         Message nMessageWithoutTimestamp = new Message("test", 0, 0, null,
-                mObjectMapper.writeValueAsBytes(mapWithoutTimestamp), timestamp);
+                mObjectMapper.writeValueAsBytes(mapWithoutTimestamp), timestamp, null);
         mMessagePackParser.getTimestampMillis(nMessageWithoutTimestamp);
     }
 
@@ -131,7 +132,7 @@ public class MessagePackParserTest extends TestCase {
         HashMap<String, Object> mapWitUnsupportedFormatTimestamp = new HashMap<String, Object>();
         mapWitUnsupportedFormatTimestamp.put("ts", "2014-11-14T18:12:52.878Z");
         Message nMessageWithUnsupportedFormatTimestamp = new Message("test", 0, 0, null,
-                mObjectMapper.writeValueAsBytes(mapWitUnsupportedFormatTimestamp), timestamp);
+                mObjectMapper.writeValueAsBytes(mapWitUnsupportedFormatTimestamp), timestamp, null);
         mMessagePackParser.getTimestampMillis(nMessageWithUnsupportedFormatTimestamp);
     }
 
@@ -140,7 +141,7 @@ public class MessagePackParserTest extends TestCase {
         HashMap<String, Object> mapWitNullTimestamp = new HashMap<String, Object>();
         mapWitNullTimestamp.put("ts", null);
         Message nMessageWithNullTimestamp = new Message("test", 0, 0, null,
-                mObjectMapper.writeValueAsBytes(mapWitNullTimestamp), timestamp);
+                mObjectMapper.writeValueAsBytes(mapWitNullTimestamp), timestamp, null);
         mMessagePackParser.getTimestampMillis(nMessageWithNullTimestamp);
     }
 

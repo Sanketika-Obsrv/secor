@@ -1,18 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.pinterest.secor.util;
 
@@ -50,7 +52,7 @@ public class FileUtil {
     private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
     private static Configuration mConf = new Configuration(true);
     private static final char[] m_digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a',
-        'b', 'c', 'd', 'e', 'f'};
+            'b', 'c', 'd', 'e', 'f'};
     private static final Pattern datePattern = Pattern.compile(".*dt=(\\d\\d\\d\\d-\\d\\d-\\d\\d).*");
 
     public static void configure(SecorConfig config) {
@@ -60,6 +62,7 @@ public class FileUtil {
                 mConf.set("fs.swift.service.GENERICPROJECT.auth.url", config.getSwiftAuthUrl());
                 mConf.set("fs.swift.service.GENERICPROJECT.username", config.getSwiftUsername());
                 mConf.set("fs.swift.service.GENERICPROJECT.tenant", config.getSwiftTenant());
+                mConf.set("fs.swift.service.GENERICPROJECT.region", config.getSwiftRegion());
                 mConf.set("fs.swift.service.GENERICPROJECT.http.port", config.getSwiftPort());
                 mConf.set("fs.swift.service.GENERICPROJECT.use.get.auth", config.getSwiftGetAuth());
                 mConf.set("fs.swift.service.GENERICPROJECT.public", config.getSwiftPublic());
@@ -71,7 +74,7 @@ public class FileUtil {
             } else if (config.getCloudService().equals("S3")) {
                 if (config.getAwsAccessKey().isEmpty() != config.getAwsSecretKey().isEmpty()) {
                     throw new IllegalArgumentException(
-                        "Must specify both aws.access.key and aws.secret.key or neither.");
+                            "Must specify both aws.access.key and aws.secret.key or neither.");
                 }
                 if (!config.getAwsAccessKey().isEmpty()) {
                     mConf.set(Constants.ACCESS_KEY, config.getAwsAccessKey());
@@ -88,7 +91,7 @@ public class FileUtil {
     }
 
     public static boolean s3PathPrefixIsAltered(String logFileName, SecorConfig config)
-                                                        throws Exception {
+            throws Exception {
         Date logDate = null;
         if (config.getS3AlterPathDate() != null && !config.getS3AlterPathDate().isEmpty()) {
 
@@ -136,7 +139,7 @@ public class FileUtil {
             }
             prefix = "swift://" + container + ".GENERICPROJECT/" + config.getSwiftPath();
         } else if (config.getCloudService().equals("S3")) {
-                prefix = config.getS3Prefix();
+            prefix = config.getS3Prefix();
         } else if (config.getCloudService().equals("GS")) {
             prefix = "gs://" + config.getGsBucket() + "/" + config.getGsPath();
         } else if (config.getCloudService().equals("Azure")) {
@@ -195,11 +198,6 @@ public class FileUtil {
         }
     }
 
-    public static void deleteOnExit(String path) {
-        File file = new File(path);
-        file.deleteOnExit();
-    }
-
     public static void moveToCloud(String srcLocalPath, String dstCloudPath) throws IOException {
         Path srcPath = new Path(srcLocalPath);
         Path dstPath = new Path(dstCloudPath);
@@ -236,39 +234,39 @@ public class FileUtil {
         }
         return modificationTime;
     }
-    
+
     /** Generate MD5 hash of topic and partitions. And extract first 4 characters of the MD5 hash.
-     * @param topic
-     * @param partitions
-     * @return
+     * @param topic topic name
+     * @param partitions partitions
+     * @return md5 hash
      */
     public static String getMd5Hash(String topic, String[] partitions) {
-      ArrayList<String> elements = new ArrayList<String>();
-      elements.add(topic);
-      for (String partition : partitions) {
-        elements.add(partition);
-      }
-      String pathPrefix = StringUtils.join(elements, "/");
-      try {
-        final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-        byte[] md5Bytes = messageDigest.digest(pathPrefix.getBytes("UTF-8"));
-        return getHexEncode(md5Bytes).substring(0, 4);
-      } catch (NoSuchAlgorithmException e) {
-        LOG.error(e.getMessage());
-      } catch (UnsupportedEncodingException e) {
-        LOG.error(e.getMessage());
-      }
-      return "";
+        ArrayList<String> elements = new ArrayList<String>();
+        elements.add(topic);
+        for (String partition : partitions) {
+            elements.add(partition);
+        }
+        String pathPrefix = StringUtils.join(elements, "/");
+        try {
+            final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+            byte[] md5Bytes = messageDigest.digest(pathPrefix.getBytes("UTF-8"));
+            return getHexEncode(md5Bytes).substring(0, 4);
+        } catch (NoSuchAlgorithmException e) {
+            LOG.error(e.getMessage());
+        } catch (UnsupportedEncodingException e) {
+            LOG.error(e.getMessage());
+        }
+        return "";
     }
 
     private static String getHexEncode(byte[] bytes) {
-      final char[] chars = new char[bytes.length * 2];
-      for (int i = 0; i < bytes.length; ++i) {
-        final int cx = i * 2;
-        final byte b = bytes[i];
-        chars[cx] = m_digits[(b & 0xf0) >> 4];
-        chars[cx + 1] = m_digits[(b & 0x0f)];
-      }
-      return new String(chars);
+        final char[] chars = new char[bytes.length * 2];
+        for (int i = 0; i < bytes.length; ++i) {
+            final int cx = i * 2;
+            final byte b = bytes[i];
+            chars[cx] = m_digits[(b & 0xf0) >> 4];
+            chars[cx + 1] = m_digits[(b & 0x0f)];
+        }
+        return new String(chars);
     }
 }

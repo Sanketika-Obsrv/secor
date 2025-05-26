@@ -2,20 +2,27 @@ CONFIG=src/main/config
 TEST_HOME=/tmp/secor_test
 TEST_CONFIG=src/test/config
 JAR_FILE=target/secor-*-SNAPSHOT-bin.tar.gz
-MVN_OPTS=-DskipTests=true -Dmaven.javadoc.skip=true
+MVN_PROFILE?=kafka-0.10.2.0
+MVN_OPTS=-Dmaven.javadoc.skip=true -P $(MVN_PROFILE) -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+MVN_SKIP_TESTS=-DskipTests=true
+
 CONTAINERS=$(shell ls containers)
 
 build:
-	@mvn package $(MVN_OPTS)
+	@mvn package $(MVN_OPTS) $(MVN_SKIP_TESTS)
+
+dependency_tree:
+	@mvn dependency:tree $(MVN_OPTS) $(MVN_SKIP_TESTS)
 
 unit:
-	@mvn test
+	@mvn test $(MVN_OPTS)
 
 integration: build
 	@rm -rf $(TEST_HOME)
 	@mkdir -p $(TEST_HOME)
 	@tar -xzf $(JAR_FILE) -C $(TEST_HOME)
 	@cp $(TEST_CONFIG)/* $(TEST_HOME)
+	@cp docker-compose.yaml $(TEST_HOME)
 	@[ ! -e $(CONFIG)/core-site.xml ] && jar uf $(TEST_HOME)/secor-*.jar -C $(TEST_CONFIG) core-site.xml
 	@[ ! -e $(CONFIG)/jets3t.properties ] && jar uf $(TEST_HOME)/secor-*.jar -C $(TEST_CONFIG) jets3t.properties
 	cd $(TEST_HOME) && ./scripts/run_tests.sh

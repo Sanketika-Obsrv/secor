@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.pinterest.secor.parser;
 
 import com.pinterest.secor.common.SecorConfig;
@@ -35,7 +53,7 @@ public class ThriftMessageParserTest extends TestCase {
         TSerializer serializer = new TSerializer(new TBinaryProtocol.Factory());
         byte[] data = serializer.serialize(thriftMessage);
 
-        return new Message("test", 0, 0, null, data, timestamp);
+        return new Message("test", 0, 0, null, data, timestamp, null);
     }
 
     @Test
@@ -84,7 +102,7 @@ public class ThriftMessageParserTest extends TestCase {
         Mockito.when(mConfig.getMessageTimestampId()).thenReturn(6);
         Mockito.when(mConfig.getMessageTimestampType()).thenReturn("i64");
         Mockito.when(mConfig.getThriftProtocolClass()).thenReturn("org.apache.thrift.protocol.TBinaryProtocol");
-        
+
         ThriftMessageParser parser = new ThriftMessageParser(mConfig);
 
         assertEquals(1405970352000L, parser.extractTimestampMillis(buildMessage(1L, 2, 1405970352L)));

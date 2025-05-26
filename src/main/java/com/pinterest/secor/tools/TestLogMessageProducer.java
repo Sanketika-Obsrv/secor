@@ -1,25 +1,28 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.pinterest.secor.tools;
 
-import kafka.javaapi.producer.Producer;
-import kafka.producer.KeyedMessage;
-import kafka.producer.ProducerConfig;
-
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -55,17 +58,15 @@ public class TestLogMessageProducer extends Thread {
     public void run() {
         Properties properties = new Properties();
         if (mMetadataBrokerList == null || mMetadataBrokerList.isEmpty()) {
-            properties.put("metadata.broker.list", "localhost:9092");
+            properties.put("bootstrap.servers", "localhost:9092");
         } else {
-            properties.put("metadata.broker.list", mMetadataBrokerList);
+            properties.put("bootstrap.severs", mMetadataBrokerList);
         }
-        properties.put("partitioner.class", "com.pinterest.secor.tools.RandomPartitioner");
-        properties.put("serializer.class", "kafka.serializer.DefaultEncoder");
-        properties.put("key.serializer.class", "kafka.serializer.StringEncoder");
-        properties.put("request.required.acks", "1");
+        properties.put("value.serializer", ByteArraySerializer.class);
+        properties.put("key.serializer", StringSerializer.class);
+        properties.put("acks", "1");
 
-        ProducerConfig config = new ProducerConfig(properties);
-        Producer<String, byte[]> producer = new Producer<String, byte[]>(config);
+        Producer<String, byte[]> producer = new KafkaProducer<>(properties);
 
         TProtocolFactory protocol = null;
         if(mType.equals("json")) {
@@ -92,8 +93,7 @@ public class TestLogMessageProducer extends Thread {
             } catch(TException e) {
                 throw new RuntimeException("Failed to serialize message " + testMessage, e);
             }
-            KeyedMessage<String, byte[]> data = new KeyedMessage<String, byte[]>(
-                mTopic, Integer.toString(i), bytes);
+            ProducerRecord<String, byte[]> data = new ProducerRecord<>(mTopic, Integer.toString(i), bytes);
             producer.send(data);
         }
         producer.close();

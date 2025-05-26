@@ -1,18 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.pinterest.secor.util;
 
@@ -26,7 +28,7 @@ import com.pinterest.secor.parser.MessageParser;
 import com.pinterest.secor.transformer.MessageTransformer;
 import com.pinterest.secor.uploader.UploadManager;
 import com.pinterest.secor.uploader.Uploader;
-import com.pinterest.secor.util.orc.schema.ORCScehmaProvider;
+import com.pinterest.secor.util.orc.schema.ORCSchemaProvider;
 
 import org.apache.hadoop.io.compress.CompressionCodec;
 
@@ -49,7 +51,7 @@ public class ReflectionUtil {
      * @param className The class name of a subclass of UploadManager
      * @param config The SecorCondig to initialize the UploadManager with
      * @return an UploadManager instance with the runtime type of the class passed by name
-     * @throws Exception
+     * @throws Exception on error
      */
     public static UploadManager createUploadManager(String className,
                                                     SecorConfig config) throws Exception {
@@ -71,7 +73,7 @@ public class ReflectionUtil {
      *
      * @param className     The class name of a subclass of Uploader
      * @return an UploadManager instance with the runtime type of the class passed by name
-     * @throws Exception
+     * @throws Exception on error
      */
     public static Uploader createUploader(String className) throws Exception {
         Class<?> clazz = Class.forName(className);
@@ -93,7 +95,7 @@ public class ReflectionUtil {
      * @param className The class name of a subclass of MessageParser
      * @param config The SecorCondig to initialize the MessageParser with
      * @return a MessageParser instance with the runtime type of the class passed by name
-     * @throws Exception
+     * @throws Exception on error
      */
     public static MessageParser createMessageParser(String className,
                                                     SecorConfig config) throws Exception {
@@ -145,7 +147,7 @@ public class ReflectionUtil {
      * @param codec an instance CompressionCodec to compress the file written with, or null for no compression
      * @param config The SecorCondig to initialize the FileWriter with
      * @return a FileWriter specialised to write the type of files supported by the FileReaderWriterFactory
-     * @throws Exception
+     * @throws Exception on error
      */
     public static FileWriter createFileWriter(String className, LogFilePath logFilePath,
                                               CompressionCodec codec,
@@ -162,7 +164,7 @@ public class ReflectionUtil {
      * @param codec an instance CompressionCodec to decompress the file being read, or null for no compression
      * @param config The SecorCondig to initialize the FileReader with
      * @return a FileReader specialised to read the type of files supported by the FileReaderWriterFactory
-     * @throws Exception
+     * @throws Exception on error
      */
     public static FileReader createFileReader(String className, LogFilePath logFilePath,
                                               CompressionCodec codec,
@@ -180,10 +182,10 @@ public class ReflectionUtil {
      *
      * See the secor.message.transformer.class config option.
      *
-     * @param className
-     * @param config
-     * @return
-     * @throws Exception
+     * @param className class name
+     * @param config secor config
+     * @return MessageTransformer
+     * @throws Exception on error
      */
     public static MessageTransformer createMessageTransformer(
             String className, SecorConfig config) throws Exception {
@@ -223,30 +225,30 @@ public class ReflectionUtil {
 
         return (MetricCollector) clazz.newInstance();
     }
-    
+
     /**
-     * Create a ORCScehmaProvider from it's fully qualified class name. The
-     * class passed in by name must be assignable to ORCScehmaProvider and have
-     * 1-parameter constructor accepting a SecorConfig. Allows the ORCScehmaProvider
-     * to be pluggable by providing the class name of a desired ORCScehmaProvider in
+     * Create a ORCSchemaProvider from it's fully qualified class name. The
+     * class passed in by name must be assignable to ORCSchemaProvider and have
+     * 1-parameter constructor accepting a SecorConfig. Allows the ORCSchemaProvider
+     * to be pluggable by providing the class name of a desired ORCSchemaProvider in
      * config.
      *
      * See the secor.orc.schema.provider config option.
      *
-     * @param className
-     * @param config
-     * @return
-     * @throws Exception
+     * @param className class name
+     * @param config secor config
+     * @return ORCSchemaProvider
+     * @throws Exception on error
      */
-    public static ORCScehmaProvider createORCSchemaProvider(
+    public static ORCSchemaProvider createORCSchemaProvider(
             String className, SecorConfig config) throws Exception {
         Class<?> clazz = Class.forName(className);
-        if (!ORCScehmaProvider.class.isAssignableFrom(clazz)) {
+        if (!ORCSchemaProvider.class.isAssignableFrom(clazz)) {
             throw new IllegalArgumentException(String.format(
                     "The class '%s' is not assignable to '%s'.", className,
-                    ORCScehmaProvider.class.getName()));
+                    ORCSchemaProvider.class.getName()));
         }
-        return (ORCScehmaProvider) clazz.getConstructor(SecorConfig.class)
+        return (ORCSchemaProvider) clazz.getConstructor(SecorConfig.class)
                 .newInstance(config);
     }
 }

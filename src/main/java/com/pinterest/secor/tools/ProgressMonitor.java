@@ -1,18 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.pinterest.secor.tools;
 
@@ -30,11 +32,9 @@ import com.pinterest.secor.parser.MessageParser;
 import com.pinterest.secor.parser.TimestampedMessageParser;
 import com.pinterest.secor.util.ReflectionUtil;
 import com.timgroup.statsd.NonBlockingStatsDClient;
-
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +70,13 @@ public class ProgressMonitor {
     {
         mConfig = config;
         mZookeeperConnector = new ZookeeperConnector(mConfig);
-        mKafkaClient = new KafkaClient(mConfig);
+        try {
+            Class timestampClass = Class.forName(mConfig.getKafkaClientClass());
+            this.mKafkaClient = (KafkaClient) timestampClass.newInstance();
+            this.mKafkaClient.init(config);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
         mMessageParser = (MessageParser) ReflectionUtil.createMessageParser(
                 mConfig.getMessageParserClass(), mConfig);
 
@@ -81,7 +87,8 @@ public class ProgressMonitor {
 
         if (mConfig.getStatsDHostPort() != null && !mConfig.getStatsDHostPort().isEmpty()) {
             HostAndPort hostPort = HostAndPort.fromString(mConfig.getStatsDHostPort());
-            mStatsDClient = new NonBlockingStatsDClient(null, hostPort.getHostText(), hostPort.getPort());
+            mStatsDClient = new NonBlockingStatsDClient(null, hostPort.getHost(), hostPort.getPort(),
+                    mConfig.getStatsDDogstatsdConstantTags());
         }
     }
 
@@ -105,7 +112,7 @@ public class ProgressMonitor {
             if (body != null) {
                 // Send request.
                 DataOutputStream dataOutputStream = new DataOutputStream(
-                    connection.getOutputStream());
+                        connection.getOutputStream());
                 dataOutputStream.writeBytes(body);
                 dataOutputStream.flush();
                 dataOutputStream.close();
@@ -117,7 +124,7 @@ public class ProgressMonitor {
             Map response = (Map) JSONValue.parse(reader);
             if (!response.get("failed").equals(0)) {
                 throw new RuntimeException("url " + url + " with body " + body + " failed " +
-                    JSONObject.toJSONString(response));
+                        JSONObject.toJSONString(response));
             }
         } catch (IOException exception) {
             if (connection != null) {
@@ -158,20 +165,30 @@ public class ProgressMonitor {
         for (Stat stat : stats) {
             @SuppressWarnings("unchecked")
             Map<String, String> tags = (Map<String, String>) stat.get(Stat.STAT_KEYS.TAGS.getName());
-            StringBuilder builder = new StringBuilder();
-	    if (mConfig.getStatsDPrefixWithConsumerGroup()) {
-		builder.append(tags.get(Stat.STAT_KEYS.GROUP.getName()))
-		    .append(PERIOD);
-	    }
-	    String aspect = builder
-		.append((String)stat.get(Stat.STAT_KEYS.METRIC.getName()))
-		.append(PERIOD)
-		.append(tags.get(Stat.STAT_KEYS.TOPIC.getName()))
-		.append(PERIOD)
-		.append(tags.get(Stat.STAT_KEYS.PARTITION.getName()))
-		.toString();
-            long value = Long.parseLong((String)stat.get(Stat.STAT_KEYS.VALUE.getName()));
-            mStatsDClient.recordGaugeValue(aspect, value);
+            long value = Long.parseLong((String) stat.get(Stat.STAT_KEYS.VALUE.getName()));
+            if (mConfig.getStatsdDogstatdsTagsEnabled()) {
+                String metricName = (String) stat.get(Stat.STAT_KEYS.METRIC.getName());
+                String[] tagArray = new String[tags.size()];
+                int i = 0;
+                for (Map.Entry<String, String> e : tags.entrySet()) {
+                    tagArray[i++] = e.getKey() + ':' + e.getValue();
+                }
+                mStatsDClient.recordGaugeValue(metricName, value, tagArray);
+            } else {
+                StringBuilder builder = new StringBuilder();
+                if (mConfig.getStatsDPrefixWithConsumerGroup()) {
+                    builder.append(tags.get(Stat.STAT_KEYS.GROUP.getName()))
+                            .append(PERIOD);
+                }
+                String metricName = builder
+                        .append((String) stat.get(Stat.STAT_KEYS.METRIC.getName()))
+                        .append(PERIOD)
+                        .append(tags.get(Stat.STAT_KEYS.TOPIC.getName()))
+                        .append(PERIOD)
+                        .append(tags.get(Stat.STAT_KEYS.PARTITION.getName()))
+                        .toString();
+                mStatsDClient.recordGaugeValue(metricName, value);
+            }
         }
     }
 
@@ -187,41 +204,46 @@ public class ProgressMonitor {
             }
             List<Integer> partitions = mZookeeperConnector.getCommittedOffsetPartitions(topic);
             for (Integer partition : partitions) {
-                TopicPartition topicPartition = new TopicPartition(topic, partition);
-                Message committedMessage = mKafkaClient.getCommittedMessage(topicPartition);
-                long committedOffset = - 1;
-                long committedTimestampMillis = -1;
-                if (committedMessage == null) {
-                    LOG.warn("no committed message found in topic {} partition {}", topic, partition);
-                } else {
-                    committedOffset = committedMessage.getOffset();
-                    committedTimestampMillis = getTimestamp(committedMessage);
-                }
+                try {
+                    TopicPartition topicPartition = new TopicPartition(topic, partition);
+                    Message committedMessage = mKafkaClient.getCommittedMessage(topicPartition);
+                    long committedOffset = -1;
+                    long committedTimestampMillis = -1;
+                    if (committedMessage == null) {
+                        LOG.warn("no committed message found in topic {} partition {}", topic, partition);
+                        continue;
+                    } else {
+                        committedOffset = committedMessage.getOffset();
+                        committedTimestampMillis = getTimestamp(committedMessage);
+                    }
 
-                Message lastMessage = mKafkaClient.getLastMessage(topicPartition);
-                if (lastMessage == null) {
-                    LOG.warn("no message found in topic {} partition {}", topic, partition);
-                } else {
-                    long lastOffset = lastMessage.getOffset();
-                    long lastTimestampMillis = getTimestamp(lastMessage);
-                    assert committedOffset <= lastOffset: Long.toString(committedOffset) + " <= " +
-                        lastOffset;
+                    Message lastMessage = mKafkaClient.getLastMessage(topicPartition);
+                    if (lastMessage == null) {
+                        LOG.warn("no message found in topic {} partition {}", topic, partition);
+                    } else {
+                        long lastOffset = lastMessage.getOffset();
+                        long lastTimestampMillis = getTimestamp(lastMessage);
+                        assert committedOffset <= lastOffset: Long.toString(committedOffset) + " <= " +
+                                lastOffset;
 
-                    long offsetLag = lastOffset - committedOffset;
-                    long timestampMillisLag = lastTimestampMillis - committedTimestampMillis;
-                    Map<String, String> tags = ImmutableMap.of(
-                            Stat.STAT_KEYS.TOPIC.getName(), topic,
-                            Stat.STAT_KEYS.PARTITION.getName(), Integer.toString(partition),
-                            Stat.STAT_KEYS.GROUP.getName(), mConfig.getKafkaGroup()
-                    );
+                        long offsetLag = lastOffset - committedOffset;
+                        long timestampMillisLag = lastTimestampMillis - committedTimestampMillis;
+                        Map<String, String> tags = ImmutableMap.of(
+                                Stat.STAT_KEYS.TOPIC.getName(), topic,
+                                Stat.STAT_KEYS.PARTITION.getName(), Integer.toString(partition),
+                                Stat.STAT_KEYS.GROUP.getName(), mConfig.getKafkaGroup()
+                        );
 
-                    long timestamp = System.currentTimeMillis() / 1000;
-                    stats.add(Stat.createInstance(metricName("lag.offsets"), tags, Long.toString(offsetLag), timestamp));
-                    stats.add(Stat.createInstance(metricName("lag.seconds"), tags, Long.toString(timestampMillisLag / 1000), timestamp));
+                        long timestamp = System.currentTimeMillis() / 1000;
+                        stats.add(Stat.createInstance(metricName("lag.offsets"), tags, Long.toString(offsetLag), timestamp));
+                        stats.add(Stat.createInstance(metricName("lag.seconds"), tags, Long.toString(timestampMillisLag / 1000), timestamp));
 
-                    LOG.debug("topic {} partition {} committed offset {} last offset {} committed timestamp {} last timestamp {}",
-                            topic, partition, committedOffset, lastOffset,
-                            (committedTimestampMillis / 1000), (lastTimestampMillis / 1000));
+                        LOG.debug("topic {} partition {} committed offset {} last offset {} committed timestamp {} last timestamp {}",
+                                topic, partition, committedOffset, lastOffset,
+                                (committedTimestampMillis / 1000), (lastTimestampMillis / 1000));
+                    }
+                } catch (RuntimeException e) {
+                    LOG.warn(e.getMessage(), e);
                 }
             }
         }

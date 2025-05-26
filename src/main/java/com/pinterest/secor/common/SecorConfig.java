@@ -1,25 +1,30 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.pinterest.secor.common;
 
-import com.google.api.client.repackaged.com.google.common.base.Strings;
+import com.google.common.base.Strings;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.ConfigurationUtils;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,6 +38,8 @@ import java.util.TimeZone;
  * @author Pawel Garbacki (pawel@pinterest.com)
  */
 public class SecorConfig {
+    private static final Logger LOG = LoggerFactory.getLogger(SecorConfig.class);
+
     private final PropertiesConfiguration mProperties;
 
     private static final ThreadLocal<SecorConfig> mSecorConfig = new ThreadLocal<SecorConfig>() {
@@ -47,13 +54,16 @@ public class SecorConfig {
             try {
                 properties = new PropertiesConfiguration(configProperty);
             } catch (ConfigurationException e) {
-                throw new RuntimeException("Error loading configuration from " + configProperty);
+                throw new RuntimeException("Error loading configuration from " + configProperty, e);
             }
 
             for (final Map.Entry<Object, Object> entry : systemProperties.entrySet()) {
                 properties.setProperty(entry.getKey().toString(), entry.getValue());
             }
 
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Configuration: {}", ConfigurationUtils.toString(properties));
+            }
             return new SecorConfig(properties);
         }
     };
@@ -65,7 +75,7 @@ public class SecorConfig {
     /**
      * Exposed for testability
      *
-     * @param properties
+     * @param properties properties config
      */
     public SecorConfig(PropertiesConfiguration properties) {
         mProperties = properties;
@@ -95,6 +105,106 @@ public class SecorConfig {
         return getString("kafka.consumer.auto.offset.reset");
     }
 
+    public String[] getKafkaTopicList() {
+        return getStringArray("kafka.new.consumer.topic.list");
+    }
+
+    public String getNewConsumerAutoOffsetReset() {
+        return getString("kafka.new.consumer.auto.offset.reset");
+    }
+
+    public int getNewConsumerPollTimeoutSeconds() {
+        return getInt("kafka.new.consumer.poll.timeout.seconds");
+    }
+
+    public String getNewConsumerRequestTimeoutMs() {
+        return getString("kafka.new.consumer.request.timeout.ms");
+    }
+
+    public String getSslKeyPassword() {
+        return getString("kafka.new.consumer.ssl.key.password");
+    }
+
+    public String getSslKeystoreLocation() {
+        return getString("kafka.new.consumer.ssl.keystore.location");
+    }
+
+    public String getSslKeystorePassword() {
+        return getString("kafka.new.consumer.ssl.keystore.password");
+    }
+
+    public String getSslTruststoreLocation() {
+        return getString("kafka.new.consumer.ssl.truststore.location");
+    }
+
+    public String getSslTruststorePassword() {
+        return getString("kafka.new.consumer.ssl.truststore.password");
+    }
+
+    public String getIsolationLevel() {
+        return getString("kafka.new.consumer.isolation.level");
+    }
+
+    public String getMaxPollIntervalMs() {
+        return getString("kafka.new.consumer.max.poll.interval.ms");
+    }
+
+    public String getMaxPollRecords() {
+        return getString("kafka.new.consumer.max.poll.records");
+    }
+
+    public String getSaslClientCallbackHandlerClass() {
+        return getString("kafka.new.consumer.sasl.client.callback.handler.class");
+    }
+
+    public String getSaslJaasConfig() {
+        return getString("kafka.new.consumer.sasl.jaas.config");
+    }
+
+    public String getSaslKerberosServiceName() {
+        return getString("kafka.new.consumer.sasl.kerberos.service.name");
+    }
+
+    public String getSaslLoginCallbackHandlerClass() {
+        return getString("kafka.new.consumer.sasl.login.callback.handler.class");
+    }
+
+    public String getSaslLoginClass() {
+        return getString("kafka.new.consumer.sasl.login.class");
+    }
+
+    public String getSaslMechanism() {
+        return getString("kafka.new.consumer.sasl.mechanism");
+    }
+
+    public String getSecurityProtocol() {
+        return getString("kafka.new.consumer.security.protocol");
+    }
+
+    public String getSslEnabledProtocol() {
+        return getString("kafka.new.consumer.ssl.enabled.protocols");
+    }
+
+    public String getSslKeystoreType() {
+        return getString("kafka.new.consumer.ssl.keystore.type");
+    }
+
+    public String getSslProtocol() {
+        return getString("kafka.new.consumer.ssl.protocol");
+    }
+
+    public String getSslProvider() {
+        return getString("kafka.new.consumer.ssl.provider");
+    }
+
+    public String getSslTruststoreType() {
+        return getString("kafka.new.consumer.ssl.truststore.type");
+    }
+
+    public String getNewConsumerPartitionAssignmentStrategyClass() {
+        return getString("kafka.new.consumer.partition.assignment.strategy.class");
+    }
+
     public String getPartitionAssignmentStrategy() {
         return getString("kafka.partition.assignment.strategy");
     }
@@ -119,6 +229,10 @@ public class SecorConfig {
         return getString("kafka.fetch.min.bytes");
     }
 
+    public String getFetchMaxBytes() {
+        return getString("kafka.fetch.max.bytes");
+    }
+
     public String getFetchWaitMaxMs() {
         return getString("kafka.fetch.wait.max.ms");
     }
@@ -139,6 +253,14 @@ public class SecorConfig {
         return getString("kafka.message.timestamp.className");
     }
 
+    public String getKafkaMessageIteratorClass() {
+        return getString("kafka.message.iterator.className");
+    }
+
+    public String getKafkaClientClass() {
+        return getString("kafka.client.className");
+    }
+
     public int getGeneration() {
         return getInt("secor.generation");
     }
@@ -153,6 +275,30 @@ public class SecorConfig {
 
     public long getMaxFileAgeSeconds() {
         return getLong("secor.max.file.age.seconds");
+    }
+
+    public int getMaxActiveFiles() {
+        return getInt("secor.max.file.count", -1);
+    }
+
+    public boolean getUploadOnShutdown() {
+        return getBoolean("secor.upload.on.shutdown");
+    }
+
+    public boolean getUploadLastSeenOffset() {
+        return getBoolean("secor.upload.last.seen.offset", false);
+    }
+
+    public boolean getDeterministicUpload() {
+        return getBoolean("secor.upload.deterministic");
+    }
+
+    public long getMaxFileTimestampRangeMillis() {
+        return getLong("secor.max.file.timestamp.range.millis");
+    }
+
+    public long getMaxInputPayloadSizeBytes() {
+        return getLong("secor.max.input.payload.size.bytes");
     }
 
     public boolean getFileAgeYoungest() {
@@ -170,7 +316,7 @@ public class SecorConfig {
     public String getS3FileSystem() { return getString("secor.s3.filesystem"); }
 
     public boolean getSeparateContainersForTopics() {
-    	return getString("secor.swift.containers.for.each.topic").toLowerCase().equals("true");
+        return getString("secor.swift.containers.for.each.topic").toLowerCase().equals("true");
     }
 
     public String getSwiftContainer() {
@@ -229,6 +375,8 @@ public class SecorConfig {
         return getInt("zookeeper.sync.time.ms");
     }
 
+    public String getSchemaRegistryUrl(){ return getString("schema.registry.url"); }
+
     public String getMessageParserClass() {
         return getString("secor.message.parser.class");
     }
@@ -242,7 +390,7 @@ public class SecorConfig {
     }
 
     public String getMessageTransformerClass(){
-    	return getString("secor.message.transformer.class");
+        return getString("secor.message.transformer.class");
     }
 
     public int getTopicPartitionForgetSeconds() {
@@ -273,6 +421,10 @@ public class SecorConfig {
         return getString("aws.secret.key");
     }
 
+    public String getAwsSessionToken() {
+        return getString("aws.session.token", "");
+    }
+
     public String getAwsEndpoint() {
         return getString("aws.endpoint");
     }
@@ -286,7 +438,7 @@ public class SecorConfig {
     }
 
     public boolean getAwsProxyEnabled(){
-    	return getBoolean("aws.proxy.isEnabled");
+        return getBoolean("aws.proxy.isEnabled");
     }
 
     public String getAwsProxyHttpHost() {
@@ -317,6 +469,10 @@ public class SecorConfig {
         return getString("swift.tenant");
     }
 
+    public String getSwiftRegion() {
+        return getString("swift.region");
+    }
+
     public String getSwiftUsername() {
         return getString("swift.username");
     }
@@ -330,19 +486,19 @@ public class SecorConfig {
     }
 
     public String getSwiftPublic() {
-    	return getString("swift.public");
+        return getString("swift.public");
     }
 
     public String getSwiftPort() {
-    	return getString("swift.port");
+        return getString("swift.port");
     }
 
     public String getSwiftGetAuth() {
-    	return getString("swift.use.get.auth");
+        return getString("swift.use.get.auth");
     }
 
     public String getSwiftApiKey() {
-    	return getString("swift.api.key");
+        return getString("swift.api.key");
     }
 
     public String getQuboleApiToken() {
@@ -358,7 +514,15 @@ public class SecorConfig {
     }
 
     public boolean getStatsDPrefixWithConsumerGroup(){
-    	return getBoolean("statsd.prefixWithConsumerGroup");
+        return getBoolean("statsd.prefixWithConsumerGroup");
+    }
+
+    public boolean getStatsdDogstatdsTagsEnabled() {
+        return getBoolean("statsd.dogstatsd.tags.enabled");
+    }
+
+    public String[] getStatsDDogstatsdConstantTags() {
+        return getStringArray("statsd.dogstatsd.constant.tags");
     }
 
     public String getMonitoringBlacklistTopics() {
@@ -376,6 +540,8 @@ public class SecorConfig {
     public String getMessageTimestampName() {
         return getString("message.timestamp.name");
     }
+
+    public String getFallbackMessageTimestampName() { return getString("message.fallback.timestamp.name"); }
 
     public String getMessageTimestampNameSeparator() {
         return getString("message.timestamp.name.separator");
@@ -396,6 +562,8 @@ public class SecorConfig {
     public boolean isMessageTimestampRequired() {
         return mProperties.getBoolean("message.timestamp.required");
     }
+
+    public long getMessageTimestampSkewMaxMs() { return getLong("message.timestamp.skew.max.ms"); }
 
     public String getMessageSplitFieldName() {
         return getString("message.split.field.name");
@@ -431,27 +599,23 @@ public class SecorConfig {
     }
 
     public String getFileReaderWriterFactory() {
-    	return getString("secor.file.reader.writer.factory");
+        return getString("secor.file.reader.writer.factory");
     }
 
     public String getFileReaderDelimiter(){
-      String readerDelimiter = getString("secor.file.reader.Delimiter");
-      if (readerDelimiter.length() > 1) {
-        throw new RuntimeException("secor.file.reader.Delimiter length can not be greater than 1 character");
-      }
-      return readerDelimiter;
+        String readerDelimiter = getString("secor.file.reader.Delimiter");
+        if (readerDelimiter.length() > 1) {
+            throw new RuntimeException("secor.file.reader.Delimiter length can not be greater than 1 character");
+        }
+        return readerDelimiter;
     }
 
     public String getFileWriterDelimiter(){
-      String writerDelimiter = getString("secor.file.writer.Delimiter");
-      if (writerDelimiter.length() > 1) {
-        throw new RuntimeException("secor.file.writer.Delimiter length can not be greater than 1 character");
-      }
-      return writerDelimiter;
-    }
-
-    public String getPerfTestTopicPrefix() {
-    	return getString("secor.kafka.perf_topic_prefix");
+        String writerDelimiter = getString("secor.file.writer.Delimiter");
+        if (writerDelimiter.length() > 1) {
+            throw new RuntimeException("secor.file.writer.Delimiter length can not be greater than 1 character");
+        }
+        return writerDelimiter;
     }
 
     public String getZookeeperPath() {
@@ -468,6 +632,15 @@ public class SecorConfig {
 
     public String getGsPath() {
         return getString("secor.gs.path");
+    }
+
+    public double getGsRateLimit() {
+        return getDouble("secor.gs.tasks.ratelimit.pr.second", 10.0);
+    }
+
+    public int getGsThreadPoolSize() {
+        return getInt("secor.gs.threadpool.fixed.size", 256);
+
     }
 
     public int getGsConnectTimeoutInMs() {
@@ -487,7 +660,7 @@ public class SecorConfig {
     }
 
     public boolean getS3MD5HashPrefix() {
-      return getBoolean("secor.s3.prefix.md5hash");
+        return getBoolean("secor.s3.prefix.md5hash");
     }
 
     public String getAzureEndpointsProtocol() { return getString("secor.azure.endpoints.protocol"); }
@@ -512,6 +685,18 @@ public class SecorConfig {
         return protobufClasses;
     }
 
+    public Map<String, String> getMessageFormatPerTopic() {
+        String prefix = "secor.topic.message.format";
+        Iterator<String> keys = mProperties.getKeys(prefix);
+        Map<String, String> topicMessageFormats = new HashMap<String, String>();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            String topic = mProperties.getString(key);
+            topicMessageFormats.put(key.substring(prefix.length() + 1), topic);
+        }
+        return topicMessageFormats;
+    }
+
     public Map<String, String> getThriftMessageClassPerTopic() {
         String prefix = "secor.thrift.message.class";
         Iterator<String> keys = mProperties.getKeys(prefix);
@@ -529,6 +714,11 @@ public class SecorConfig {
         return Strings.isNullOrEmpty(timezone) ? TimeZone.getTimeZone("UTC") : TimeZone.getTimeZone(timezone);
     }
 
+    public TimeZone getMessageTimeZone() {
+        String timezone = getString("secor.message.timezone");
+        return Strings.isNullOrEmpty(timezone) ? TimeZone.getTimeZone("UTC") : TimeZone.getTimeZone(timezone);
+    }
+
     public boolean getBoolean(String name, boolean defaultValue) {
         return mProperties.getBoolean(name, defaultValue);
     }
@@ -540,8 +730,13 @@ public class SecorConfig {
     public void checkProperty(String name) {
         if (!mProperties.containsKey(name)) {
             throw new RuntimeException("Failed to find required configuration option '" +
-                                       name + "'.");
+                    name + "'.");
         }
+    }
+
+    public boolean checkPropertyProvided(String name) {
+        if (!mProperties.containsKey(name)) return false;
+        else return true;
     }
 
     public String getString(String name) {
@@ -562,6 +757,10 @@ public class SecorConfig {
         return mProperties.getInt(name, defaultValue);
     }
 
+    public double getDouble(String name, double defaultValue) {
+        return mProperties.getDouble(name, defaultValue);
+    }
+
     public long getLong(String name) {
         return mProperties.getLong(name);
     }
@@ -577,20 +776,36 @@ public class SecorConfig {
     public String getMetricsCollectorClass() {
         return getString("secor.monitoring.metrics.collector.class");
     }
-    
+
+    public boolean getMicroMeterCollectorJmxEnabled() {
+        return getBoolean("secor.monitoring.metrics.collector.micrometer.jmx.enabled", false);
+    }
+
+    public boolean getMicroMeterCollectorStatsdEnabled() {
+        return getBoolean("secor.monitoring.metrics.collector.micrometer.statsd.enabled", false);
+    }
+
+    public boolean getMicroMeterCollectorPrometheusEnabled() {
+        return getBoolean("secor.monitoring.metrics.collector.micrometer.prometheus.enabled", false);
+    }
+
+    public int getMicroMeterCacheSize() {
+        return getInt("secor.monitoring.metrics.collector.micrometer.cache.size", 500);
+    }
+
     /**
      * This method is used for fetching all the properties which start with the given prefix.
      * It returns a Map of all those key-val.
-     * 
+     *
      * e.g.
      * a.b.c=val1
      * a.b.d=val2
      * a.b.e=val3
-     * 
+     *
      * If prefix is a.b then,
-     * These will be fetched as a map {c => val1, d => val2, e => val3}
-     * 
-     * @param prefix
+     * These will be fetched as a map {c = val1, d = val2, e = val3}
+     *
+     * @param prefix property prefix
      * @return
      */
     public Map<String, String> getPropertyMapForPrefix(String prefix) {
@@ -603,12 +818,45 @@ public class SecorConfig {
         }
         return map;
     }
-    
+
     public Map<String, String> getORCMessageSchema() {
         return getPropertyMapForPrefix("secor.orc.message.schema");
     }
-    
+
+    public Map<String, String> getAvroMessageSchema() {
+        return getPropertyMapForPrefix("secor.avro.message.schema");
+    }
+
     public String getORCSchemaProviderClass(){
         return getString("secor.orc.schema.provider");
     }
+
+    public String getS3OutputFilePattern() {
+        return getString("secor.s3.output_file_pattern");
+    }
+
+    public String getPartitionPrefixMapping() {
+        String[] map = getStringArray("secor.partition.prefix.mapping");
+        if (null != map)
+            return StringUtils.join(map, ',');
+        return "";
+    }
+
+    public boolean isPartitionPrefixEnabled() {
+        return getBoolean("secor.partition.prefix.enable", false);
+    }
+
+    public String getPartitionPrefixIdentifier() {
+        return getString("secor.partition.prefix.identifier", "");
+    }
+
+    public String getPartitionOutputDtFormat() {
+        return getString("secor.partition.output_dt_format");
+    }
+
+    public String getMaxFileAgePolicy() {
+        return getString("secor.max.file.age.policy");
+    }
+
+    public String[] getMessageChannelIdentifier() { return getStringArray("secor.partition.message.channel.identifier"); }
 }

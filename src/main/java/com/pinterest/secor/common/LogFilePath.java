@@ -1,18 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.pinterest.secor.common;
 
@@ -25,6 +27,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.text.SimpleDateFormat;
+import org.apache.commons.lang.text.StrSubstitutor;
 
 /**
  * LogFilePath represents path of a log file.  It contains convenience method for building and
@@ -54,20 +63,23 @@ public class LogFilePath {
     private final long[] mOffsets;
     private final String mExtension;
     private MessageDigest messageDigest;
+    private String mOutputFilePattern;
+    private SimpleDateFormat timeFormat = new SimpleDateFormat("HH-mm");
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("YYYYMMdd");
 
 
     public LogFilePath(String prefix, String topic, String[] partitions, int generation,
                        int[] kafkaPartitions, long[] offsets, String extension) {
         assert kafkaPartitions != null & kafkaPartitions.length >= 1
-            : "Wrong kafkaParttions: " + Arrays.toString(kafkaPartitions);
+                : "Wrong kafkaParttions: " + Arrays.toString(kafkaPartitions);
         assert offsets != null & offsets.length >= 1 : "Wrong offsets: " + Arrays.toString(offsets);
         assert kafkaPartitions.length == offsets.length
-            : "Size mismatch partitions: " + Arrays.toString(kafkaPartitions) +
-            " offsets: " + Arrays.toString(offsets);
+                : "Size mismatch partitions: " + Arrays.toString(kafkaPartitions) +
+                " offsets: " + Arrays.toString(offsets);
         for (int i = 1; i < kafkaPartitions.length; i++) {
             assert kafkaPartitions[i] == kafkaPartitions[i - 1] + 1
-                : "Non consecutive partitions " + kafkaPartitions[i] +
-                " and " + kafkaPartitions[i-1];
+                    : "Non consecutive partitions " + kafkaPartitions[i] +
+                    " and " + kafkaPartitions[i-1];
         }
         mPrefix = prefix;
         mTopic = topic;
@@ -87,14 +99,14 @@ public class LogFilePath {
     public LogFilePath(String prefix, int generation, long lastCommittedOffset,
                        ParsedMessage message, String extension) {
         this(prefix, message.getTopic(), message.getPartitions(), generation,
-            new int[]{message.getKafkaPartition()}, new long[]{lastCommittedOffset},
-            extension);
+                new int[]{message.getKafkaPartition()}, new long[]{lastCommittedOffset},
+                extension);
     }
 
     public LogFilePath(String prefix, String topic, String[] partitions, int generation,
                        int kafkaPartition, long offset, String extension) {
         this(prefix, topic, partitions, generation, new int[]{kafkaPartition},
-            new long[]{offset}, extension);
+                new long[]{offset}, extension);
     }
 
     public LogFilePath(String prefix, String path) {
@@ -139,9 +151,21 @@ public class LogFilePath {
         return result;
     }
 
-    public LogFilePath withPrefix(String prefix) {
-        return new LogFilePath(prefix, mTopic, mPartitions, mGeneration, mKafkaPartitions, mOffsets,
-            mExtension);
+    public LogFilePath withPrefix(String prefix, SecorConfig mConfig) {
+        return new LogFilePath(prefix, mTopic, mPartitions, mGeneration, mKafkaPartitions, mOffsets, mExtension, mConfig);
+    }
+
+    public LogFilePath(String prefix, String topic, String[] partitions, int generation, int[] kafkaPartition,
+                       long[] offset, String extension, SecorConfig config) {
+
+        mPrefix = prefix;
+        mTopic = topic;
+        mPartitions = partitions;
+        mGeneration = generation;
+        mKafkaPartitions = kafkaPartition;
+        mOffsets = offset;
+        mExtension = extension;
+        mOutputFilePattern = config.getS3OutputFilePattern();
     }
 
     public String getLogFileParentDir() {
@@ -169,7 +193,7 @@ public class LogFilePath {
         basenameElements.add(Integer.toString(mGeneration));
         if (mKafkaPartitions.length > 1) {
             String kafkaPartitions = mKafkaPartitions[0] + "-" +
-                mKafkaPartitions[mKafkaPartitions.length - 1];
+                    mKafkaPartitions[mKafkaPartitions.length - 1];
             basenameElements.add(kafkaPartitions);
 
             StringBuilder sb = new StringBuilder();
@@ -191,13 +215,45 @@ public class LogFilePath {
     }
 
     public String getLogFilePath() {
+        if (StringUtils.isNotBlank(mOutputFilePattern)) {
+            return getLogFilePath(mOutputFilePattern);
+        }
         String basename = getLogFileBasename();
-
         ArrayList<String> pathElements = new ArrayList<String>();
         pathElements.add(getLogFileDir());
         pathElements.add(basename);
 
         return StringUtils.join(pathElements, "/") + mExtension;
+    }
+
+    private String getLogFilePath(String pattern) {
+
+        List<String> pathElements = new ArrayList<String>();
+        pathElements.add(mPrefix);
+        pathElements.add(StrSubstitutor.replace(pattern, getValueMap(), "{", "}"));
+        System.out.println("Path:" + StringUtils.join(pathElements, "/") + mExtension);
+        return StringUtils.join(pathElements, "/") + mExtension;
+    }
+
+    private Map<String, String> getValueMap() {
+
+        Map<String, String> valueMap = new HashMap<String, String>();
+        valueMap.put("randomHex", getRandomHex());
+        valueMap.put("partition", mPartitions[0]);
+        valueMap.put("topic", mTopic);
+        valueMap.put("generation", mGeneration + "");
+        valueMap.put("kafkaPartition", mKafkaPartitions[0] + "");
+        valueMap.put("fmOffset", String.format("%020d", mOffsets[0]));
+        valueMap.put("currentTimestamp", System.currentTimeMillis() + "");
+        valueMap.put("currentTime", timeFormat.format(new Date()));
+        valueMap.put("currentDate", dateFormat.format(new Date()));
+        return valueMap;
+    }
+
+    public static String getRandomHex() {
+
+        Random random = new Random();
+        return StringUtils.substring(Integer.toHexString(random.nextInt()), 0, 4);
     }
 
     public String getLogFileCrcPath() {

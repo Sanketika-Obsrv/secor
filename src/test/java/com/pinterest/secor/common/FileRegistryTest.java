@@ -1,18 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.pinterest.secor.common;
 
@@ -24,6 +26,7 @@ import junit.framework.TestCase;
 
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.DefaultCodec;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -58,6 +61,8 @@ public class FileRegistryTest extends TestCase {
         properties.addProperty("secor.file.reader.writer.factory",
                 "com.pinterest.secor.io.impl.SequenceFileReaderWriterFactory");
         properties.addProperty("secor.file.age.youngest", true);
+        properties.addProperty("secor.max.file.age.policy", "");
+
         SecorConfig secorConfig = new SecorConfig(properties);
         mRegistry = new FileRegistry(secorConfig);
         mLogFilePath = new LogFilePath("/some_parent_dir", PATH);
@@ -82,7 +87,7 @@ public class FileRegistryTest extends TestCase {
         Mockito.when(writer.getLength()).thenReturn(123L);
 
         FileWriter createdWriter = mRegistry.getOrCreateWriter(
-                mLogFilePath, null);
+                mLogFilePath, new DefaultCodec());
         assertTrue(createdWriter == writer);
 
         return writer;
@@ -95,16 +100,16 @@ public class FileRegistryTest extends TestCase {
         mRegistry.getOrCreateWriter(mLogFilePath, null);
 
         // Verify that the method has been called exactly once (the default).
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(ReflectionUtil.class);
         ReflectionUtil.createFileWriter(Mockito.any(String.class),
                 Mockito.any(LogFilePath.class),
                 Mockito.any(CompressionCodec.class),
                 Mockito.any(SecorConfig.class)
         );
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(FileUtil.class);
         FileUtil.delete(PATH);
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(FileUtil.class);
         FileUtil.delete(CRC_PATH);
 
         TopicPartition topicPartition = new TopicPartition("some_topic", 0);
@@ -158,12 +163,12 @@ public class FileRegistryTest extends TestCase {
         mRegistry.getOrCreateWriter(mLogFilePathGz, new GzipCodec());
 
         // Verify that the method has been called exactly once (the default).
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(FileUtil.class);
         FileUtil.delete(PATH_GZ);
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(FileUtil.class);
         FileUtil.delete(CRC_PATH);
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(ReflectionUtil.class);
         ReflectionUtil.createFileWriter(Mockito.any(String.class),
                 Mockito.any(LogFilePath.class),
                 Mockito.any(CompressionCodec.class),
@@ -188,9 +193,9 @@ public class FileRegistryTest extends TestCase {
         PowerMockito.mockStatic(FileUtil.class);
 
         mRegistry.deletePath(mLogFilePath);
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(FileUtil.class);
         FileUtil.delete(PATH);
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(FileUtil.class);
         FileUtil.delete(CRC_PATH);
 
         assertTrue(mRegistry.getPaths(mTopicPartition).isEmpty());
@@ -203,9 +208,9 @@ public class FileRegistryTest extends TestCase {
         PowerMockito.mockStatic(FileUtil.class);
 
         mRegistry.deleteTopicPartition(mTopicPartition);
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(FileUtil.class);
         FileUtil.delete(PATH);
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(FileUtil.class);
         FileUtil.delete(CRC_PATH);
 
         assertTrue(mRegistry.getTopicPartitions().isEmpty());

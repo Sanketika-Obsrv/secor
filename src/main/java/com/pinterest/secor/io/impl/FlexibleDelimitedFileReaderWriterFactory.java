@@ -1,19 +1,21 @@
-/**
-* Licensed to the Apache Software Foundation (ASF) under one or more
-* contributor license agreements.  See the NOTICE file distributed with
-* this work for additional information regarding copyright ownership.
-* The ASF licenses this file to You under the Apache License, Version 2.0
-* (the "License"); you may not use this file except in compliance with
-* the License.  You may obtain a copy of the License at
-*
-*    http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.pinterest.secor.io.impl;
 
 import java.io.BufferedInputStream;
@@ -42,15 +44,15 @@ import com.pinterest.secor.util.FileUtil;
 import com.pinterest.secor.common.SecorConfig;
 
 /**
-* Flexible Delimited Text File Reader Writer with Compression
-*
-* @author Ahsan Nabi Dar (ahsan@wego.com)
-*/
+ * Flexible Delimited Text File Reader Writer with Compression
+ *
+ * @author Ahsan Nabi Dar (ahsan@wego.com)
+ */
 public class FlexibleDelimitedFileReaderWriterFactory implements FileReaderWriterFactory {
 
   @Override
   public FileReader BuildFileReader(LogFilePath logFilePath, CompressionCodec codec)
-  throws IllegalAccessException, IOException, InstantiationException {
+          throws IllegalAccessException, IOException, InstantiationException {
     return new FlexibleDelimitedFileReader(logFilePath, codec);
   }
 
@@ -72,9 +74,9 @@ public class FlexibleDelimitedFileReaderWriterFactory implements FileReaderWrite
       FileSystem fs = FileUtil.getFileSystem(path.getLogFilePath());
       InputStream inputStream = fs.open(fsPath);
       this.mReader = (codec == null) ? new BufferedInputStream(inputStream)
-      : new BufferedInputStream(
-      codec.createInputStream(inputStream,
-      mDecompressor = CodecPool.getDecompressor(codec)));
+              : new BufferedInputStream(
+              codec.createInputStream(inputStream,
+                      mDecompressor = CodecPool.getDecompressor(codec)));
       this.mOffset = path.getOffset();
     }
 
@@ -86,7 +88,7 @@ public class FlexibleDelimitedFileReaderWriterFactory implements FileReaderWrite
           delimiter = (byte)readerDelimiter.charAt(0);
         }
       } catch(ConfigurationException e) {
-          throw new RuntimeException("Error loading configuration from getFileReaderDelimiter()");
+        throw new RuntimeException("Error loading configuration from getFileReaderDelimiter()");
       }
       return delimiter;
     }
@@ -101,7 +103,7 @@ public class FlexibleDelimitedFileReaderWriterFactory implements FileReaderWrite
             return null;
           } else { // if bytes followed by end of stream: framing error
             throw new EOFException(
-            "Non-empty message without delimiter");
+                    "Non-empty message without delimiter");
           }
         }
         messageBuffer.write(nextByte);
@@ -129,9 +131,9 @@ public class FlexibleDelimitedFileReaderWriterFactory implements FileReaderWrite
       FileSystem fs = FileUtil.getFileSystem(path.getLogFilePath());
       this.mCountingStream = new CountingOutputStream(fs.create(fsPath));
       this.mWriter = (codec == null) ? new BufferedOutputStream(
-      this.mCountingStream) : new BufferedOutputStream(
-      codec.createOutputStream(this.mCountingStream,
-      mCompressor = CodecPool.getCompressor(codec)));
+              this.mCountingStream) : new BufferedOutputStream(
+              codec.createOutputStream(this.mCountingStream,
+                      mCompressor = CodecPool.getCompressor(codec)));
     }
 
     public byte getWriterDelimiter() {
@@ -143,7 +145,7 @@ public class FlexibleDelimitedFileReaderWriterFactory implements FileReaderWrite
           delimiter = (byte)writerDelimiter.charAt(0);
         }
       } catch(ConfigurationException e) {
-          throw new RuntimeException("Error loading configuration from getFileWriterDelimiter()");
+        throw new RuntimeException("Error loading configuration from getFileWriterDelimiter()");
       }
       return delimiter;
     }

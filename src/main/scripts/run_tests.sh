@@ -22,7 +22,7 @@
 #
 # To run the test:
 #     cd ${OPTIMUS}/secor
-#     mvn package
+#     mvn package -P <kafka-profile with matching scala versions>
 #     mkdir /tmp/test
 #     cd /tmp/test
 #     tar -zxvf ~/git/optimus/secor/target/secor-0.2-SNAPSHOT-bin.tar.gz
@@ -61,7 +61,7 @@ S3_FILESYSTEMS=${S3_FILESYSTEMS:-s3n}
 
 # The minimum wait time is 10 seconds plus delta.  Secor is configured to upload files older than
 # 10 seconds and we need to make sure that everything ends up on s3 before starting verification.
-WAIT_TIME=${SECOR_WAIT_TIME:-40}
+WAIT_TIME=${SECOR_WAIT_TIME:-30}
 BASE_DIR=$(dirname $0)
 CONF_DIR=${BASE_DIR}/..
 
@@ -130,25 +130,46 @@ stop_s3() {
 }
 
 start_zookeeper() {
-    run_command "${BASE_DIR}/run_kafka_class.sh \
-        org.apache.zookeeper.server.quorum.QuorumPeerMain ${CONF_DIR}/zookeeper.test.properties > \
-        ${LOGS_DIR}/zookeeper.log 2>&1 &"
+    if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+      run_command "docker-compose up -d zookeeper"
+    else
+      run_command "${BASE_DIR}/run_kafka_class.sh \
+          org.apache.zookeeper.server.quorum.QuorumPeerMain ${CONF_DIR}/zookeeper.test.properties > \
+          ${LOGS_DIR}/zookeeper.log 2>&1 &"
+    fi
 }
 
 stop_zookeeper() {
-    run_command "pkill -f 'org.apache.zookeeper.server.quorum.QuorumPeerMain' || true"
+    if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+      run_command "docker-compose rm -sf zookeeper"
+    else
+      run_command "pkill -f 'org.apache.zookeeper.server.quorum.QuorumPeerMain' || true"
+    fi
 }
 
 start_kafka_server () {
-    run_command "${BASE_DIR}/run_kafka_class.sh kafka.Kafka ${CONF_DIR}/kafka.test.properties > \
-        ${LOGS_DIR}/kafka_server.log 2>&1 &"
+    if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+      run_command "docker-compose up -d kafka"
+    else
+      run_command "${BASE_DIR}/run_kafka_class.sh kafka.Kafka ${CONF_DIR}/kafka.test.properties > \
+          ${LOGS_DIR}/kafka_server.log 2>&1 &"
+    fi
 }
 
 stop_kafka_server() {
-    run_command "pkill -f 'kafka.Kafka' || true"
+    if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+      run_command "docker-compose rm -sf kafka"
+    else
+      run_command "pkill -f 'kafka.Kafka' || true"
+    fi
 }
 
 start_secor() {
+    if [[ "$MVN_PROFILE" == kafka-0.8* ]];then
+      echo "Detected kafka 0.8 profile, need to run with Kafka8 timestamp class.."
+      ADDITIONAL_OPTS="${ADDITIONAL_OPTS} -Dkafka.message.timestamp.className=com.pinterest.secor.timestamp.Kafka8MessageTimestamp"
+    fi
+
     run_command "${JAVA} -server -ea -Dlog4j.configuration=log4j.dev.properties \
         -Dconfig=secor.test.backup.properties ${ADDITIONAL_OPTS} -cp $CLASSPATH \
         com.pinterest.secor.main.ConsumerMain > ${LOGS_DIR}/secor_backup.log 2>&1 &"
@@ -172,14 +193,19 @@ run_finalizer() {
     if [ ${EXIT_CODE} -ne 0 ]; then
         echo -e "\e[1;41;97mFinalizer FAILED\e[0m"
         echo "See log ${LOGS_DIR}/finalizer.log for more details"
+        tail -n 50 ${LOGS_DIR}/finalizer.log
         exit ${EXIT_CODE}
     fi
 }
 
 create_topic() {
-    run_command "${BASE_DIR}/run_kafka_class.sh kafka.admin.TopicCommand --create --zookeeper \
-        localhost:2181 --replication-factor 1 --partitions 2 --topic test > \
-        ${LOGS_DIR}/create_topic.log 2>&1"
+    if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+      run_command "docker-compose exec kafka kafka-topics --zookeeper zookeeper:2181 --create --replication-factor 1 --partitions 2 --topic test"
+    else
+      run_command "${BASE_DIR}/run_kafka_class.sh kafka.admin.TopicCommand --create --zookeeper \
+          localhost:2181 --replication-factor 1 --partitions 2 --topic test > \
+          ${LOGS_DIR}/create_topic.log 2>&1"
+    fi
 }
 
 # post messages
@@ -236,6 +262,10 @@ verify() {
       echo "Success file count: $count"
       if [ "$count" != "$2" ]; then
         echo -e "\e[1;41;97m_SUCCESS files not as expected: $2 \e[0m"
+        echo "See log ${LOGS_DIR}/secor_${RUNMODE}.log for more details"
+        tail -n 50 ${LOGS_DIR}/secor_${RUNMODE}.log
+        echo "See log ${LOGS_DIR}/finalizer.log for more details"
+        tail -n 50 ${LOGS_DIR}/finalizer.log
         exit 1
       fi
     done
@@ -273,7 +303,7 @@ initialize() {
     start_zookeeper
     sleep 3
     start_kafka_server
-    sleep 3
+    sleep 10
     create_topic
     sleep 3
 }
@@ -295,6 +325,34 @@ post_and_verify_test() {
     echo -e "\e[1;42;97mpost_and_verify_test succeeded\e[0m"
 }
 
+# verify the messages
+# $1: offset storage kind, zookeeper or kafka
+# $2: dual commit enabled
+post_stop_and_verity_test() {
+    OLD_ADDITIONAL_OPTS=${ADDITIONAL_OPTS}
+    echo "********************************************************"
+    echo "post_and_verify_kafka_storage"
+    initialize
+    ADDITIONAL_OPTS="${ADDITIONAL_OPTS} -Dkafka.offsets.storage=$1 -Dkafka.dual.commit.enabled=$2"
+    start_secor
+    sleep 3
+    post_messages ${MESSAGES} 0
+    echo "Waiting ${WAIT_TIME} sec for Secor to upload logs to s3"
+    sleep ${WAIT_TIME}
+    stop_secor
+    sleep 10
+    echo "Starting secor again"
+    start_secor
+    sleep 3
+    post_messages ${MESSAGES} 0
+    echo "Waiting ${WAIT_TIME} sec for Secor to upload logs to s3"
+    sleep ${WAIT_TIME}
+    verify $((${MESSAGES} * 2)) 0
+
+    stop_all
+    ADDITIONAL_OPTS=${OLD_ADDITIONAL_OPTS}
+    echo -e "\e[1;42;97mpost_and_verify_kafka_storage succeeded\e[0m"
+}
 # Post some messages and run the finalizer, count # of messages and success file
 # $1: hr or dt, decides whether it's hourly or daily folder finalization
 post_and_finalizer_verify_test() {
@@ -332,7 +390,7 @@ post_and_finalizer_verify_test() {
 
     start_secor
     sleep 3
-    
+
     # post some messages for yesterday
     post_messages ${MESSAGES} ${DAY_TIMESHIFT}
     # post some messages for last hour
@@ -434,22 +492,32 @@ for fkey in ${S3_FILESYSTEMS}; do
     for key in ${!READER_WRITERS[@]}; do
         MESSAGE_TYPE=${key}
         ADDITIONAL_OPTS="-Dsecor.s3.filesystem=${FILESYSTEM_TYPE} -Dsecor.file.reader.writer.factory=${READER_WRITERS[${key}]}"
+        if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+          echo "Detected kafka 2.0 profile, setting new classes config"
+          ADDITIONAL_OPTS="${ADDITIONAL_OPTS} -Dkafka.message.iterator.className=com.pinterest.secor.reader.SecorKafkaMessageIterator"
+          ADDITIONAL_OPTS="${ADDITIONAL_OPTS} -Dkafka.client.className=com.pinterest.secor.common.SecorKafkaClient"
+        fi
+
         echo "********************************************************"
         echo "Running tests for Message Type: ${MESSAGE_TYPE} and  ReaderWriter:${READER_WRITERS[${key}]} using filesystem: ${FILESYSTEM_TYPE}"
+        if [ ${MESSAGE_TYPE} = "binary" ]; then
+            post_stop_and_verity_test "kafka" "true"
+            post_stop_and_verity_test "kafka" "false"
+            post_stop_and_verity_test "zookeeper" "true"
+            post_stop_and_verity_test "zookeeper" "false"
+        else
+            post_stop_and_verity_test "zookeeper" "false"
+        fi
         post_and_verify_test
         if [ ${MESSAGE_TYPE} = "binary" ]; then
             # Testing finalizer in partition mode
             post_and_finalizer_verify_test hr
             post_and_finalizer_verify_test dt
+            start_from_non_zero_offset_test
+            move_offset_back_test
         fi
-        start_from_non_zero_offset_test
-        move_offset_back_test
         if [ ${MESSAGE_TYPE} = "json" ]; then
             post_and_verify_compressed_test
-        elif [ -z ${SKIP_COMPRESSED_BINARY} ]; then
-            post_and_verify_compressed_test
-        else
-            echo "Skipping compressed tests for ${MESSAGE_TYPE}"
         fi
     done
 done

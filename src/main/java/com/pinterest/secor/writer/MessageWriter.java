@@ -1,21 +1,24 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.pinterest.secor.writer;
 
+import com.pinterest.secor.common.DeterministicUploadPolicyTracker;
 import com.pinterest.secor.common.FileRegistry;
 import com.pinterest.secor.common.LogFilePath;
 import com.pinterest.secor.common.OffsetTracker;
@@ -45,16 +48,19 @@ public class MessageWriter {
     protected SecorConfig mConfig;
     protected OffsetTracker mOffsetTracker;
     protected FileRegistry mFileRegistry;
+    private DeterministicUploadPolicyTracker mDeterministicUploadPolicyTracker;
     protected String mFileExtension;
     protected CompressionCodec mCodec;
     protected String mLocalPrefix;
     protected final int mGeneration;
 
     public MessageWriter(SecorConfig config, OffsetTracker offsetTracker,
-                         FileRegistry fileRegistry) throws Exception {
+                         FileRegistry fileRegistry,
+                         DeterministicUploadPolicyTracker deterministicUploadPolicyTracker) throws Exception {
         mConfig = config;
         mOffsetTracker = offsetTracker;
         mFileRegistry = fileRegistry;
+        mDeterministicUploadPolicyTracker = deterministicUploadPolicyTracker;
         if (mConfig.getCompressionCodec() != null && !mConfig.getCompressionCodec().isEmpty()) {
             mCodec = CompressionUtil.createCompressionCodec(mConfig.getCompressionCodec());
             mFileExtension = mCodec.getDefaultExtension();
@@ -64,36 +70,40 @@ public class MessageWriter {
         } else if (mFileExtension == null){
             mFileExtension = "";
         }
-        
+
         mLocalPrefix = mConfig.getLocalPath() + '/' + IdUtil.getLocalMessageDir();
         mGeneration = mConfig.getGeneration();
     }
 
-    public void adjustOffset(Message message) throws IOException {
+    public void adjustOffset(Message message, boolean isLegacyConsumer) throws IOException {
         TopicPartition topicPartition = new TopicPartition(message.getTopic(),
-                                                           message.getKafkaPartition());
+                message.getKafkaPartition());
         long lastSeenOffset = mOffsetTracker.getLastSeenOffset(topicPartition);
-        if (message.getOffset() != lastSeenOffset + 1) {
+        //this validation logic is for duplicates removing as no rebalancing callbacks is incompatible with LegacyKafkaMessageIterator
+        if (isLegacyConsumer && message.getOffset() != lastSeenOffset + 1) {
             StatsUtil.incr("secor.consumer_rebalance_count." + topicPartition.getTopic());
             // There was a rebalancing event since we read the last message.
-            LOG.debug("offset of message {} does not follow sequentially the last seen offset {}. " +
+            LOG.info("offset of message {} does not follow sequentially the last seen offset {}. " +
                             "Deleting files in topic {} partition {}",
                     message, lastSeenOffset, topicPartition.getTopic(), topicPartition.getPartition());
 
             mFileRegistry.deleteTopicPartition(topicPartition);
+            if (mDeterministicUploadPolicyTracker != null) {
+                mDeterministicUploadPolicyTracker.reset(topicPartition);
+            }
         }
         mOffsetTracker.setLastSeenOffset(topicPartition, message.getOffset());
     }
 
     public void write(ParsedMessage message) throws Exception {
         TopicPartition topicPartition = new TopicPartition(message.getTopic(),
-                                                           message.getKafkaPartition());
+                message.getKafkaPartition());
         long offset = mOffsetTracker.getAdjustedCommittedOffsetCount(topicPartition);
         LogFilePath path = new LogFilePath(mLocalPrefix, mGeneration, offset, message,
-        		mFileExtension);
+                mFileExtension);
         FileWriter writer = mFileRegistry.getOrCreateWriter(path, mCodec);
-        writer.write(new KeyValue(message.getOffset(), message.getKafkaKey(), message.getPayload(), message.getTimestamp()));
+        writer.write(new KeyValue(message.getOffset(), message.getKafkaKey(), message.getPayload(), message.getTimestamp(), message.getHeaders()));
         LOG.debug("appended message {} to file {}.  File length {}",
-                  message, path, writer.getLength());
+                message, path, writer.getLength());
     }
 }
