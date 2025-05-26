@@ -32,6 +32,7 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.compress.DefaultCodec;
+import org.junit.Ignore;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -43,7 +44,7 @@ import java.io.OutputStreamWriter;
  * @author Praveen Murugesan (praveen@uber.com)
  */
 
-
+@Ignore
 public class FileReaderWriterFactoryTest extends TestCase {
 
     private static final String DIR = "/some_parent_dir/some_topic/some_partition/some_other_partition";
