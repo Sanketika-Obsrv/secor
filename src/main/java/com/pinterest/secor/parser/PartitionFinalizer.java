@@ -18,11 +18,7 @@
  */
 package com.pinterest.secor.parser;
 
-import com.pinterest.secor.common.KafkaClient;
-import com.pinterest.secor.common.LogFilePath;
-import com.pinterest.secor.common.SecorConfig;
-import com.pinterest.secor.common.TopicPartition;
-import com.pinterest.secor.common.ZookeeperConnector;
+import com.pinterest.secor.common.*;
 import com.pinterest.secor.message.Message;
 import com.pinterest.secor.util.CompressionUtil;
 import com.pinterest.secor.util.FileUtil;
@@ -31,10 +27,7 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * Partition finalizer writes _SUCCESS files to date partitions that very likely won't be receiving
@@ -46,7 +39,6 @@ public class PartitionFinalizer {
     private static final Logger LOG = LoggerFactory.getLogger(PartitionFinalizer.class);
 
     private final SecorConfig mConfig;
-    private final ZookeeperConnector mZookeeperConnector;
     private final TimestampedMessageParser mMessageParser;
     private final KafkaClient mKafkaClient;
     private final QuboleClient mQuboleClient;
@@ -55,10 +47,9 @@ public class PartitionFinalizer {
 
     public PartitionFinalizer(SecorConfig config) throws Exception {
         mConfig = config;
-        Class kafkaClientClass = Class.forName(mConfig.getKafkaClientClass());
+        Class<?> kafkaClientClass = Class.forName(mConfig.getKafkaClientClass());
         this.mKafkaClient = (KafkaClient) kafkaClientClass.newInstance();
         this.mKafkaClient.init(config);
-        mZookeeperConnector = new ZookeeperConnector(mConfig);
         mMessageParser = (TimestampedMessageParser) ReflectionUtil.createMessageParser(
           mConfig.getMessageParserClass(), mConfig);
         mQuboleClient = new QuboleClient(mConfig);
@@ -203,7 +194,26 @@ public class PartitionFinalizer {
     }
 
     public void finalizePartitions() throws Exception {
-        List<String> topics = mZookeeperConnector.getCommittedOffsetTopics();
+        List<String> topics = new ArrayList<>();
+        String[] topicList = mConfig.getKafkaTopicList();
+        if (topicList != null && topicList.length > 0 && !topicList[0].isEmpty()) {
+            topics = Arrays.asList(topicList);
+        } else {
+            // If topic list is empty, fetch all topics from Kafka and filter by regex
+            if (mKafkaClient instanceof SecorKafkaClient) {
+                SecorKafkaClient secorKafkaClient = (SecorKafkaClient) mKafkaClient;
+                Set<String> allTopics = secorKafkaClient.getAllKafkaTopics();
+                String topicFilter = mConfig.getKafkaTopicFilter();
+                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(topicFilter);
+                for (String topic : allTopics) {
+                    if (pattern.matcher(topic).matches()) {
+                        topics.add(topic);
+                    }
+                }
+            } else {
+                throw new UnsupportedOperationException("KafkaClient implementation does not support fetching all topics. Please use SecorKafkaClient.");
+            }
+        }
         for (String topic : topics) {
             if (!topic.matches(mConfig.getKafkaTopicFilter())) {
                 LOG.info("skipping topic {}", topic);

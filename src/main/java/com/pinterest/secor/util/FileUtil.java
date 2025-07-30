@@ -58,7 +58,7 @@ public class FileUtil {
     public static void configure(SecorConfig config) {
         if (config != null) {
             if (config.getCloudService().equals("Swift")) {
-                mConf.set("fs.swift.impl", "org.apache.hadoop.fs.swift.snative.SwiftNativeFileSystem");
+                // mConf.set("fs.swift.impl", "org.apache.hadoop.fs.swift.snative.SwiftNativeFileSystem"); // Removed: Swift FS is not supported in Hadoop 3.x
                 mConf.set("fs.swift.service.GENERICPROJECT.auth.url", config.getSwiftAuthUrl());
                 mConf.set("fs.swift.service.GENERICPROJECT.username", config.getSwiftUsername());
                 mConf.set("fs.swift.service.GENERICPROJECT.tenant", config.getSwiftTenant());

@@ -44,3 +44,5 @@ bin/
 .project
 .classpath
 .m2
+some_parent_dir
+.vscode

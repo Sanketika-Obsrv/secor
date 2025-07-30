@@ -21,7 +21,6 @@ package com.pinterest.secor.reader;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.pinterest.secor.common.SecorConfig;
-import com.pinterest.secor.common.ZookeeperConnector;
 import com.pinterest.secor.message.Message;
 import com.pinterest.secor.message.MessageHeader;
 import com.pinterest.secor.rebalance.RebalanceHandler;
@@ -54,7 +53,6 @@ public class SecorKafkaMessageIterator implements KafkaMessageIterator, Rebalanc
     private static final Logger LOG = LoggerFactory.getLogger(SecorKafkaMessageIterator.class);
     private KafkaConsumer<byte[], byte[]> mKafkaConsumer;
     private Deque<ConsumerRecord<byte[], byte[]>> mRecordsBatch;
-    private ZookeeperConnector mZookeeperConnector;
     private int mPollTimeout;
 
     @Override
@@ -84,7 +82,6 @@ public class SecorKafkaMessageIterator implements KafkaMessageIterator, Rebalanc
         Properties props = new Properties();
         String offsetResetConfig = config.getNewConsumerAutoOffsetReset();
         mPollTimeout = config.getNewConsumerPollTimeoutSeconds();
-
         props.put("bootstrap.servers", config.getKafkaSeedBrokerHost() + ":" + config.getKafkaSeedBrokerPort());
         props.put("group.id", config.getKafkaGroup());
         props.put("enable.auto.commit", true);
@@ -92,7 +89,6 @@ public class SecorKafkaMessageIterator implements KafkaMessageIterator, Rebalanc
         props.put("client.id", IdUtil.getConsumerId());
         props.put("key.deserializer", ByteArrayDeserializer.class);
         props.put("value.deserializer", ByteArrayDeserializer.class);
-
         optionalConfig(config.getNewConsumerRequestTimeoutMs(), conf -> props.put("request.timeout.ms", conf));
         optionalConfig(config.getSocketReceiveBufferBytes(), conf -> props.put("receive.buffer.bytes", conf));
         optionalConfig(config.getFetchMinBytes(), conf -> props.put("fetch.min.bytes", conf));
@@ -118,8 +114,6 @@ public class SecorKafkaMessageIterator implements KafkaMessageIterator, Rebalanc
         optionalConfig(config.getSslProvider(), conf -> props.put("ssl.provider", conf));
         optionalConfig(config.getSslTruststoreType(), conf -> props.put("ssl.truststore.type", conf));
         optionalConfig(config.getNewConsumerPartitionAssignmentStrategyClass(), conf -> props.put("partition.assignment.strategy", conf));
-
-        mZookeeperConnector = new ZookeeperConnector(config);
         mRecordsBatch = new ArrayDeque<>();
         mKafkaConsumer = new KafkaConsumer<>(props);
     }
@@ -143,23 +137,12 @@ public class SecorKafkaMessageIterator implements KafkaMessageIterator, Rebalanc
 
     @Override
     public void subscribe(RebalanceHandler handler, SecorConfig config) {
-        ConsumerRebalanceListener reBalanceListener = new SecorConsumerRebalanceListener(mKafkaConsumer, mZookeeperConnector, getSkipZookeeperOffsetSeek(config), config.getNewConsumerAutoOffsetReset(), handler);
-        ;
-
+        ConsumerRebalanceListener reBalanceListener = new SecorConsumerRebalanceListener(mKafkaConsumer, config.getNewConsumerAutoOffsetReset(), handler);
         String[] subscribeList = config.getKafkaTopicList();
-        if (subscribeList.length == 0 || Strings.isNullOrEmpty(subscribeList[0])) {
-            mKafkaConsumer.subscribe(Pattern.compile(config.getKafkaTopicFilter()), reBalanceListener);
+        if (subscribeList.length == 0 || com.google.common.base.Strings.isNullOrEmpty(subscribeList[0])) {
+            mKafkaConsumer.subscribe(java.util.regex.Pattern.compile(config.getKafkaTopicFilter()), reBalanceListener);
         } else {
-            mKafkaConsumer.subscribe(Arrays.asList(subscribeList), reBalanceListener);
+            mKafkaConsumer.subscribe(java.util.Arrays.asList(subscribeList), reBalanceListener);
         }
-    }
-
-
-    private boolean getSkipZookeeperOffsetSeek(SecorConfig config) {
-
-        String dualCommitEnabled = config.getDualCommitEnabled();
-        String offsetStorage = config.getOffsetsStorage();
-        return offsetStorage.equals("kafka") && dualCommitEnabled.equals("true");
-
     }
 }

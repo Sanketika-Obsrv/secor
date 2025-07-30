@@ -42,31 +42,27 @@ public class SecorConfig {
 
     private final PropertiesConfiguration mProperties;
 
-    private static final ThreadLocal<SecorConfig> mSecorConfig = new ThreadLocal<SecorConfig>() {
+    private static final ThreadLocal<SecorConfig> mSecorConfig = ThreadLocal.withInitial(() -> {
+        // Load the default configuration file first
+        Properties systemProperties = System.getProperties();
+        String configProperty = systemProperties.getProperty("config");
 
-        @Override
-        protected SecorConfig initialValue() {
-            // Load the default configuration file first
-            Properties systemProperties = System.getProperties();
-            String configProperty = systemProperties.getProperty("config");
-
-            PropertiesConfiguration properties;
-            try {
-                properties = new PropertiesConfiguration(configProperty);
-            } catch (ConfigurationException e) {
-                throw new RuntimeException("Error loading configuration from " + configProperty, e);
-            }
-
-            for (final Map.Entry<Object, Object> entry : systemProperties.entrySet()) {
-                properties.setProperty(entry.getKey().toString(), entry.getValue());
-            }
-
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Configuration: {}", ConfigurationUtils.toString(properties));
-            }
-            return new SecorConfig(properties);
+        PropertiesConfiguration properties;
+        try {
+            properties = new PropertiesConfiguration(configProperty);
+        } catch (ConfigurationException e) {
+            throw new RuntimeException("Error loading configuration from " + configProperty, e);
         }
-    };
+
+        for (final Map.Entry<Object, Object> entry : systemProperties.entrySet()) {
+            properties.setProperty(entry.getKey().toString(), entry.getValue());
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Configuration: {}", ConfigurationUtils.toString(properties));
+        }
+        return new SecorConfig(properties);
+    });
 
     public static SecorConfig load() throws ConfigurationException {
         return mSecorConfig.get();
@@ -87,22 +83,6 @@ public class SecorConfig {
 
     public int getKafkaSeedBrokerPort() {
         return getInt("kafka.seed.broker.port");
-    }
-
-    public String getKafkaZookeeperPath() {
-        return getString("kafka.zookeeper.path");
-    }
-
-    public String getZookeeperQuorum() {
-        return StringUtils.join(getStringArray("zookeeper.quorum"), ',');
-    }
-
-    public int getConsumerTimeoutMs() {
-        return getInt("kafka.consumer.timeout.ms");
-    }
-
-    public String getConsumerAutoOffsetReset() {
-        return getString("kafka.consumer.auto.offset.reset");
     }
 
     public String[] getKafkaTopicList() {
@@ -205,22 +185,6 @@ public class SecorConfig {
         return getString("kafka.new.consumer.partition.assignment.strategy.class");
     }
 
-    public String getPartitionAssignmentStrategy() {
-        return getString("kafka.partition.assignment.strategy");
-    }
-
-    public String getRebalanceMaxRetries() {
-        return getString("kafka.rebalance.max.retries");
-    }
-
-    public String getRebalanceBackoffMs() {
-        return getString("kafka.rebalance.backoff.ms");
-    }
-
-    public String getFetchMessageMaxBytes() {
-        return getString("kafka.fetch.message.max.bytes");
-    }
-
     public String getSocketReceiveBufferBytes() {
         return getString("kafka.socket.receive.buffer.bytes");
     }
@@ -233,10 +197,6 @@ public class SecorConfig {
         return getString("kafka.fetch.max.bytes");
     }
 
-    public String getFetchWaitMaxMs() {
-        return getString("kafka.fetch.wait.max.ms");
-    }
-
     public String getDualCommitEnabled() {
         return getString("kafka.dual.commit.enabled");
     }
@@ -247,10 +207,6 @@ public class SecorConfig {
 
     public boolean useKafkaTimestamp() {
         return getBoolean("kafka.useTimestamp", false);
-    }
-
-    public String getKafkaMessageTimestampClass() {
-        return getString("kafka.message.timestamp.className");
     }
 
     public String getKafkaMessageIteratorClass() {
@@ -316,7 +272,7 @@ public class SecorConfig {
     public String getS3FileSystem() { return getString("secor.s3.filesystem"); }
 
     public boolean getSeparateContainersForTopics() {
-        return getString("secor.swift.containers.for.each.topic").toLowerCase().equals("true");
+        return getString("secor.swift.containers.for.each.topic").equalsIgnoreCase("true");
     }
 
     public String getSwiftContainer() {
@@ -355,24 +311,12 @@ public class SecorConfig {
         return getString("secor.kafka.topic_filter");
     }
 
-    public String getKafkaTopicBlacklist() {
-        return getString("secor.kafka.topic_blacklist");
-    }
-
     public String getKafkaTopicUploadAtMinuteMarkFilter() { return getString("secor.kafka.upload_at_minute_mark.topic_filter");}
 
     public int getUploadMinuteMark(){ return getInt("secor.upload.minute_mark");}
 
     public String getKafkaGroup() {
         return getString("secor.kafka.group");
-    }
-
-    public int getZookeeperSessionTimeoutMs() {
-        return getInt("zookeeper.session.timeout.ms");
-    }
-
-    public int getZookeeperSyncTimeMs() {
-        return getInt("zookeeper.sync.time.ms");
     }
 
     public String getSchemaRegistryUrl(){ return getString("schema.registry.url"); }
@@ -525,10 +469,6 @@ public class SecorConfig {
         return getStringArray("statsd.dogstatsd.constant.tags");
     }
 
-    public String getMonitoringBlacklistTopics() {
-        return getString("monitoring.blacklist.topics");
-    }
-
     public String getMonitoringPrefix() {
         return getString("monitoring.prefix");
     }
@@ -563,8 +503,6 @@ public class SecorConfig {
         return mProperties.getBoolean("message.timestamp.required");
     }
 
-    public long getMessageTimestampSkewMaxMs() { return getLong("message.timestamp.skew.max.ms"); }
-
     public String getMessageSplitFieldName() {
         return getString("message.split.field.name");
     }
@@ -594,10 +532,6 @@ public class SecorConfig {
         return getString("secor.compression.codec");
     }
 
-    public int getMaxMessageSizeBytes() {
-        return getInt("secor.max.message.size.bytes");
-    }
-
     public String getFileReaderWriterFactory() {
         return getString("secor.file.reader.writer.factory");
     }
@@ -616,10 +550,6 @@ public class SecorConfig {
             throw new RuntimeException("secor.file.writer.Delimiter length can not be greater than 1 character");
         }
         return writerDelimiter;
-    }
-
-    public String getZookeeperPath() {
-        return getString("secor.zookeeper.path");
     }
 
     public String getGsCredentialsPath() {
@@ -676,7 +606,7 @@ public class SecorConfig {
     public Map<String, String> getProtobufMessageClassPerTopic() {
         String prefix = "secor.protobuf.message.class";
         Iterator<String> keys = mProperties.getKeys(prefix);
-        Map<String, String> protobufClasses = new HashMap<String, String>();
+        Map<String, String> protobufClasses = new HashMap<>();
         while (keys.hasNext()) {
             String key = keys.next();
             String className = mProperties.getString(key);
@@ -688,7 +618,7 @@ public class SecorConfig {
     public Map<String, String> getMessageFormatPerTopic() {
         String prefix = "secor.topic.message.format";
         Iterator<String> keys = mProperties.getKeys(prefix);
-        Map<String, String> topicMessageFormats = new HashMap<String, String>();
+        Map<String, String> topicMessageFormats = new HashMap<>();
         while (keys.hasNext()) {
             String key = keys.next();
             String topic = mProperties.getString(key);
@@ -700,7 +630,7 @@ public class SecorConfig {
     public Map<String, String> getThriftMessageClassPerTopic() {
         String prefix = "secor.thrift.message.class";
         Iterator<String> keys = mProperties.getKeys(prefix);
-        Map<String, String> thriftClasses = new HashMap<String, String>();
+        Map<String, String> thriftClasses = new HashMap<>();
         while (keys.hasNext()) {
             String key = keys.next();
             String className = mProperties.getString(key);
@@ -735,8 +665,7 @@ public class SecorConfig {
     }
 
     public boolean checkPropertyProvided(String name) {
-        if (!mProperties.containsKey(name)) return false;
-        else return true;
+        return mProperties.containsKey(name);
     }
 
     public String getString(String name) {
@@ -796,21 +725,20 @@ public class SecorConfig {
     /**
      * This method is used for fetching all the properties which start with the given prefix.
      * It returns a Map of all those key-val.
-     *
+     * <p>
      * e.g.
      * a.b.c=val1
      * a.b.d=val2
      * a.b.e=val3
-     *
+     * <p>
      * If prefix is a.b then,
      * These will be fetched as a map {c = val1, d = val2, e = val3}
      *
      * @param prefix property prefix
-     * @return
      */
     public Map<String, String> getPropertyMapForPrefix(String prefix) {
         Iterator<String> keys = mProperties.getKeys(prefix);
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
         while (keys.hasNext()) {
             String key = keys.next();
             String value = mProperties.getString(key);
@@ -852,10 +780,6 @@ public class SecorConfig {
 
     public String getPartitionOutputDtFormat() {
         return getString("secor.partition.output_dt_format");
-    }
-
-    public String getMaxFileAgePolicy() {
-        return getString("secor.max.file.age.policy");
     }
 
     public String[] getMessageChannelIdentifier() { return getStringArray("secor.partition.message.channel.identifier"); }

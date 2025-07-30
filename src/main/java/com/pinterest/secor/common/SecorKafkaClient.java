@@ -45,7 +45,6 @@ public class SecorKafkaClient implements KafkaClient {
     private static final Logger LOG = LoggerFactory.getLogger(SecorKafkaClient.class);
     private KafkaConsumer<byte[], byte[]> mKafkaConsumer;
     private AdminClient mKafkaAdminClient;
-    private ZookeeperConnector mZookeeperConnector;
     private int mPollTimeout;
 
     @Override
@@ -75,9 +74,8 @@ public class SecorKafkaClient implements KafkaClient {
     public Message getCommittedMessage(TopicPartition topicPartition) throws Exception {
         org.apache.kafka.common.TopicPartition kafkaTopicPartition = new org.apache.kafka.common.TopicPartition(topicPartition.getTopic(), topicPartition.getPartition());
         mKafkaConsumer.assign(Collections.singleton(kafkaTopicPartition));
-        long committedOffset = mZookeeperConnector.getCommittedOffsetCount(topicPartition);
+        long committedOffset = mKafkaConsumer.committed(kafkaTopicPartition).offset();
         mKafkaConsumer.seek(kafkaTopicPartition, committedOffset - 1);
-
         return readSingleMessage(mKafkaConsumer);
     }
 
@@ -105,7 +103,6 @@ public class SecorKafkaClient implements KafkaClient {
 
     @Override
     public void init(SecorConfig config) {
-        mZookeeperConnector = new ZookeeperConnector(config);
         mPollTimeout = config.getNewConsumerPollTimeoutSeconds();
         Properties props = new Properties();
         props.put("bootstrap.servers", config.getKafkaSeedBrokerHost() + ":" + config.getKafkaSeedBrokerPort());
@@ -116,5 +113,9 @@ public class SecorKafkaClient implements KafkaClient {
         props.put("max.poll.records", 1);
         mKafkaConsumer = new KafkaConsumer<>(props);
         mKafkaAdminClient = KafkaAdminClient.create(props);
+    }
+
+    public java.util.Set<String> getAllKafkaTopics() throws Exception {
+        return mKafkaAdminClient.listTopics().names().get();
     }
 }

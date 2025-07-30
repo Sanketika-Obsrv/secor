@@ -1,6 +1,5 @@
 package com.pinterest.secor.rebalance;
 
-import com.pinterest.secor.common.ZookeeperConnector;
 import com.pinterest.secor.util.StatsUtil;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -21,21 +20,15 @@ public class SecorConsumerRebalanceListener implements ConsumerRebalanceListener
 
     private KafkaConsumer<byte[], byte[]> mKafkaConsumer;
 
-    private ZookeeperConnector mZookeeperConnector;
-
-    private boolean skipZookeeperOffsetSeek;
-
     private String offsetResetConfig;
 
     private RebalanceHandler handler;
 
 
-    public SecorConsumerRebalanceListener(KafkaConsumer<byte[], byte[]> mKafkaConsumer, ZookeeperConnector mZookeeperConnector, boolean skipZookeeperOffsetSeek, String offsetResetConfig, RebalanceHandler handler) {
+    public SecorConsumerRebalanceListener(KafkaConsumer<byte[], byte[]> mKafkaConsumer, String offsetResetConfig, RebalanceHandler handler) {
         this.mKafkaConsumer = mKafkaConsumer;
-        this.mZookeeperConnector = mZookeeperConnector;
-        this.skipZookeeperOffsetSeek = skipZookeeperOffsetSeek;
-        this.offsetResetConfig = offsetResetConfig;
         this.handler = handler;
+        this.offsetResetConfig = offsetResetConfig;
     }
 
     @Override
@@ -50,10 +43,6 @@ public class SecorConsumerRebalanceListener implements ConsumerRebalanceListener
 
     @Override
     public void onPartitionsAssigned(Collection<TopicPartition> collection) {
-        if (skipZookeeperOffsetSeek) {
-            LOG.debug("offset storage set to kafka. Skipping reading offsets from zookeeper");
-            return;
-        }
         Map<TopicPartition, Long> committedOffsets = getCommittedOffsets(collection);
         committedOffsets.forEach(((topicPartition, offset) -> {
             if (offset == -1) {
@@ -62,6 +51,7 @@ public class SecorConsumerRebalanceListener implements ConsumerRebalanceListener
                 } else if (offsetResetConfig.equals("latest")) {
                     mKafkaConsumer.seekToEnd(Collections.singleton(topicPartition));
                 }
+                mKafkaConsumer.seekToBeginning(Collections.singleton(topicPartition));
             } else {
                 long committedOffset = Math.max(0, offset);
                 LOG.info("Seeking {} to offset {} after partition assigned", topicPartition, committedOffset);
@@ -72,19 +62,15 @@ public class SecorConsumerRebalanceListener implements ConsumerRebalanceListener
 
     private Map<TopicPartition, Long> getCommittedOffsets(Collection<TopicPartition> assignment) {
         Map<TopicPartition, Long> committedOffsets = new HashMap<>();
-
         for (TopicPartition topicPartition : assignment) {
-            com.pinterest.secor.common.TopicPartition secorTopicPartition =
-                    new com.pinterest.secor.common.TopicPartition(topicPartition.topic(), topicPartition.partition());
             try {
-                long committedOffset = mZookeeperConnector.getCommittedOffsetCount(secorTopicPartition);
+                long committedOffset = mKafkaConsumer.committed(topicPartition) != null ? mKafkaConsumer.committed(topicPartition).offset() : -1;
                 committedOffsets.put(topicPartition, committedOffset);
             } catch (Exception e) {
-                LOG.trace("Unable to fetch committed offsets from zookeeper", e);
+                LOG.trace("Unable to fetch committed offsets from kafka", e);
                 throw new RuntimeException(e);
             }
         }
-
         return committedOffsets;
     }
 
