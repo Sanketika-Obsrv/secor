@@ -44,9 +44,13 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
         
-    - name: Build and Push Docker Image
+    - name: Build Docker Image
       if: success()
       run: mvn clean install -DskipTests -Pbuild-docker-image -Ddockerfile.repository=ghcr.io/${{ github.repository }} -Ddockerfile.tag=${{ github.sha }} --file pom.xml
+      
+    - name: Push Docker Image
+      if: success()
+      run: mvn dockerfile:push -Pbuild-docker-image -Ddockerfile.repository=ghcr.io/${{ github.repository }} -Ddockerfile.tag=${{ github.sha }} --file pom.xml
       
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
