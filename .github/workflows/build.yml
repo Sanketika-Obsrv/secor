@@ -40,6 +40,10 @@ jobs:
       if: success()
       uses: docker/setup-buildx-action@v3
       
+    - name: Set Docker image name
+      if: success()
+      run: echo "DOCKER_IMAGE_NAME=$(echo ghcr.io/${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+    
     - name: Log in to GitHub Container Registry
       if: success()
       uses: docker/login-action@v3
@@ -50,11 +54,11 @@ jobs:
         
     - name: Build Docker Image
       if: success()
-      run: mvn clean install -DskipTests -Pbuild-docker-image -Ddockerfile.repository=ghcr.io/${{ github.repository }} -Ddockerfile.tag=${{ github.sha }} --file pom.xml
+      run: mvn clean install -DskipTests -Pbuild-docker-image -Ddockerfile.repository=${{ env.DOCKER_IMAGE_NAME }} -Ddockerfile.tag=${{ github.sha }} -Ddockerfile.username=${{ github.actor }} -Ddockerfile.password=${{ secrets.GITHUB_TOKEN }} --file pom.xml
       
     - name: Push Docker Image
       if: success()
-      run: mvn dockerfile:push -Pbuild-docker-image -Ddockerfile.repository=ghcr.io/${{ github.repository }} -Ddockerfile.tag=${{ github.sha }} --file pom.xml
+      run: mvn dockerfile:push -Pbuild-docker-image -Ddockerfile.repository=${{ env.DOCKER_IMAGE_NAME }} -Ddockerfile.tag=${{ github.sha }} -Ddockerfile.username=${{ github.actor }} -Ddockerfile.password=${{ secrets.GITHUB_TOKEN }} --file pom.xml
       
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
