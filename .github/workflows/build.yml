@@ -3,10 +3,11 @@ name: Build and Test
 on:
   push:
     branches: [ main, master, develop ]
+    tags:
+    - '*'
   pull_request:
     types: [ opened, synchronize, reopened ]
-  tags:
-    - '*'
+  
   workflow_dispatch:
 
 jobs:
