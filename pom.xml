@@ -84,6 +84,16 @@
 
     <repositories>
         <repository>
+            <id>central</id>
+            <name>Maven Repository Switchboard</name>
+            <layout>default</layout>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
+        <repository>
+            <id>confluent</id>
+            <url>https://packages.confluent.io/maven/</url>
+        </repository>
+        <repository>
             <id>Twitter public Maven repo</id>
             <url>https://maven.twttr.com</url>
         </repository>
@@ -91,19 +101,13 @@
             <id>Typesafe public Maven repo</id>
             <url>https://repo.typesafe.com/typesafe/releases</url>
         </repository>
-        <repository>
-            <id>confluent</id>
-            <url>https://packages.confluent.io/maven/</url>
-        </repository>
-        <repository>
-            <id>central</id>
-            <name>Maven Repository Switchboard</name>
-            <layout>default</layout>
-            <url>https://repo1.maven.org/maven2/</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
+        <pluginRepository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+        </pluginRepository>
         <pluginRepository>
             <id>Twitter public Maven repo</id>
             <url>https://maven.twttr.com</url>
