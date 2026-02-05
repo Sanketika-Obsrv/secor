@@ -54,11 +54,17 @@ jobs:
         
     - name: Build Docker Image
       if: success()
-      run: mvn clean install -DskipTests -Pbuild-docker-image -Ddockerfile.repository=${{ env.DOCKER_IMAGE_NAME }} -Ddockerfile.tag=${{ github.sha }} -Ddockerfile.username=${{ github.actor }} -Ddockerfile.password=${{ secrets.GITHUB_TOKEN }} --file pom.xml
+      run: mvn clean install -DskipTests -Pbuild-docker-image -Ddockerfile.repository=${{ env.DOCKER_IMAGE_NAME }} -Ddockerfile.tag=${{ github.sha }} --file pom.xml
+      
+    - name: Tag Docker Image
+      if: success()
+      run: docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} ${{ env.DOCKER_IMAGE_NAME }}:latest
       
     - name: Push Docker Image
       if: success()
-      run: mvn dockerfile:push -Pbuild-docker-image -Ddockerfile.repository=${{ env.DOCKER_IMAGE_NAME }} -Ddockerfile.tag=${{ github.sha }} -Ddockerfile.username=${{ github.actor }} -Ddockerfile.password=${{ secrets.GITHUB_TOKEN }} --file pom.xml
+      run: |
+        docker push ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+        docker push ${{ env.DOCKER_IMAGE_NAME }}:latest
       
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
