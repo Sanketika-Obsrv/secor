@@ -1,6 +1,6 @@
 # FROM --platform=linux/amd64,linux/arm64 openjdk:11
 ARG TARGETPLATFORM
-FROM openjdk:11 as base
+FROM openjdk:11-jdk as base
 # https://github.com/docker-library/openjdk/issues/145#issuecomment-334561903
 # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=894979
 RUN rm /etc/ssl/certs/java/cacerts ; update-ca-certificates -f
