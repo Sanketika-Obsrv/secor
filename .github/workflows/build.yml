@@ -44,7 +44,7 @@ jobs:
       if: success()
       run: |
         echo "DOCKER_IMAGE_NAME=$(echo ghcr.io/${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-        echo "DOCKER_IMAGE_TAG=$(echo "${{ github.ref_name }}_$(echo $GITHUB_SHA | cut -c1-7)" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        echo "DOCKER_IMAGE_TAG=$(echo "${{ github.ref_name }}_$(echo $GITHUB_SHA | cut -c1-7)" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')" >> $GITHUB_ENV
     
     - name: Log in to GitHub Container Registry
       if: success()
