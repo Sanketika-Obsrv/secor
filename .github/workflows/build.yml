@@ -42,7 +42,9 @@ jobs:
       
     - name: Set Docker image name
       if: success()
-      run: echo "DOCKER_IMAGE_NAME=$(echo ghcr.io/${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      run: |
+        echo "DOCKER_IMAGE_NAME=$(echo ghcr.io/${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        echo "DOCKER_IMAGE_TAG=$(echo "${{ github.ref_name }}_$(echo $GITHUB_SHA | cut -c1-7)" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
     
     - name: Log in to GitHub Container Registry
       if: success()
@@ -54,16 +56,16 @@ jobs:
         
     - name: Build Docker Image
       if: success()
-      run: mvn clean install -DskipTests -Pbuild-docker-image -Ddockerfile.repository=${{ env.DOCKER_IMAGE_NAME }} -Ddockerfile.tag=${{ github.sha }} --file pom.xml
+      run: mvn clean install -DskipTests -Pbuild-docker-image -Ddockerfile.repository=${{ env.DOCKER_IMAGE_NAME }} -Ddockerfile.tag=${{ env.DOCKER_IMAGE_TAG }} --file pom.xml
       
     - name: Tag Docker Image
       if: success()
-      run: docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} ${{ env.DOCKER_IMAGE_NAME }}:latest
+      run: docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} ${{ env.DOCKER_IMAGE_NAME }}:latest
       
     - name: Push Docker Image
       if: success()
       run: |
-        docker push ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+        docker push ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
         docker push ${{ env.DOCKER_IMAGE_NAME }}:latest
       
     - name: Upload build artifacts
