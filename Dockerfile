@@ -1,6 +1,6 @@
-# FROM --platform=linux/amd64,linux/arm64 openjdk:11
+# FROM --platform=linux/amd64,linux/arm64 eclipse-temurin:11.0.20.1_1-jdk-focal
 ARG TARGETPLATFORM
-FROM openjdk:11-jdk-buster as base
+FROM eclipse-temurin:11.0.20.1_1-jdk-focal as base
 # https://github.com/docker-library/openjdk/issues/145#issuecomment-334561903
 # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=894979
 RUN rm /etc/ssl/certs/java/cacerts ; update-ca-certificates -f
