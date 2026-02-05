@@ -622,6 +622,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -677,12 +678,13 @@
                                 <id>default</id>
                                 <goals>
                                     <goal>build</goal>
+                                    <goal>push</goal>
                                 </goals>
                             </execution>
                         </executions>
                         <configuration>
-                            <repository>secor</repository>
-                            <tag>${release-version}</tag>
+                            <repository>${dockerfile.repository}</repository>
+                            <tag>${dockerfile.tag}</tag>
                         </configuration>
                     </plugin>
                 </plugins>
