@@ -676,6 +676,22 @@
                         <groupId>com.google.cloud.tools</groupId>
                         <artifactId>jib-maven-plugin</artifactId>
                         <version>3.4.3</version>
+                        <executions>
+                            <execution>
+                                <id>jib-build</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>jib-build-install</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                         <configuration>
                             <to>
                                 <image>${dockerfile.repository}:${dockerfile.tag}</image>
