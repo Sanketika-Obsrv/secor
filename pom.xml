@@ -673,13 +673,21 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.google.cloud.tools</groupId>
-                        <artifactId>jib-maven-plugin</artifactId>
-                        <version>3.4.3</version>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>dockerfile-maven-plugin</artifactId>
+                        <version>1.4.13</version>
+                        <executions>
+                            <execution>
+                                <id>default</id>
+                                <goals>
+                                    <goal>build</goal>
+                                    <goal>push</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                         <configuration>
-                            <to>
-                                <image>${dockerfile.repository}:${dockerfile.tag}</image>
-                            </to>
+                            <repository>${dockerfile.repository}</repository>
+                            <tag>${dockerfile.tag}</tag>
                         </configuration>
                     </plugin>
                 </plugins>
