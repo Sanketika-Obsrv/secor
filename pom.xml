@@ -42,6 +42,7 @@
         <release-version>0.29</release-version>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <encoding>UTF-8</encoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <parquet.version>1.11.0</parquet.version>
@@ -49,6 +50,8 @@
         <!-- Whether we will using legazy old consumer kafka-legacy or new consumer kafka-2.0.0 -->
         <!-- Name of the directory below src/main/config that contains kafka-version-specific settings -->
         <kafka.properties>kafka-legacy</kafka.properties>
+        <dockerfile.repository>secor</dockerfile.repository>
+        <dockerfile.tag>latest</dockerfile.tag>
     </properties>
 
     <distributionManagement>
@@ -622,7 +625,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -670,21 +673,13 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.spotify</groupId>
-                        <artifactId>dockerfile-maven-plugin</artifactId>
-                        <version>1.4.13</version>
-                        <executions>
-                            <execution>
-                                <id>default</id>
-                                <goals>
-                                    <goal>build</goal>
-                                    <goal>push</goal>
-                                </goals>
-                            </execution>
-                        </executions>
+                        <groupId>com.google.cloud.tools</groupId>
+                        <artifactId>jib-maven-plugin</artifactId>
+                        <version>3.4.3</version>
                         <configuration>
-                            <repository>${dockerfile.repository}</repository>
-                            <tag>${dockerfile.tag}</tag>
+                            <to>
+                                <image>${dockerfile.repository}:${dockerfile.tag}</image>
+                            </to>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -715,7 +710,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/timestamp/*</exclude>
@@ -801,7 +796,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/timestamp/Kafka10MessageTimestamp.java</exclude>
@@ -838,7 +833,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/common/SecorKafkaClient.java</exclude>
@@ -892,7 +887,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/timestamp/*</exclude>
@@ -926,7 +921,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/common/SecorKafkaClient.java</exclude>
@@ -971,7 +966,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/common/SecorKafkaClient.java</exclude>
