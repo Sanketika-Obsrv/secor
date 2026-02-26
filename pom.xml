@@ -45,7 +45,7 @@
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <encoding>UTF-8</encoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <parquet.version>1.11.0</parquet.version>
+        <parquet.version>1.17.0</parquet.version>
 
         <!-- Whether we will using legazy old consumer kafka-legacy or new consumer kafka-2.0.0 -->
         <!-- Name of the directory below src/main/config that contains kafka-version-specific settings -->
@@ -66,21 +66,41 @@
     </distributionManagement>
     <dependencyManagement>
         <dependencies>
-            <!-- Azure pulls in 2.6 while kafka-2.11 pulls in 2.9.1 -->
+            <!-- CVE-2020-36518, CVE-2021-46877, CVE-2022-42003, CVE-2022-42004, CVE-2023-35116 -->
+            <!-- Upgraded from 2.11.x to 2.17.3 (last Java-8-compatible minor) -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
-                <version>2.11.1</version>
+                <version>2.17.3</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.11.0</version>
+                <version>2.17.3</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>2.11.1</version>
+                <version>2.17.3</version>
+            </dependency>
+            <!-- Pin httpclient: CVE-2020-13956 - misinterprets malformed URI authority -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.5.14</version>
+            </dependency>
+            <!-- Pin httpcore to match httpclient 4.5.x -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>4.4.16</version>
+            </dependency>
+            <!-- CVE-2025-48924 CVSS 5.3: Uncontrolled Recursion in commons-lang3 -->
+            <!-- Pin to 3.17.0 (already the resolved version; 3.18+ requires Java 11) -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.17.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -122,50 +142,96 @@
     </pluginRepositories>
 
     <dependencies>
+        <!-- Exclude transitive log4j 1.x (CVE-2019-17571 CVSS 9.8, CVE-2020-9493 CVSS 9.8, -->
+        <!-- CVE-2022-23305 CVSS 9.8, CVE-2022-23302 CVSS 8.8) pulled in via slf4j-log4j12 -->
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-avro-serializer</artifactId>
             <version>2.0.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-            <version>1.10.0</version>
+            <version>1.12.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-avro</artifactId>
             <version>${parquet.version}</version>
         </dependency>
+        <!-- CVE-2024-7254 CVSS 7.5: unbounded recursion in nested groups -->
+        <!-- Upgraded from 3.22.2 to 3.25.8 -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>3.22.2</version>
+            <version>3.25.8</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java-util</artifactId>
-            <version>3.22.2</version>
+            <version>3.25.8</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.12.468</version>
+            <version>1.12.797</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-sts</artifactId>
-            <version>1.12.468</version>
+            <version>1.12.797</version>
         </dependency>
         <dependency>
             <groupId>net.java.dev.jets3t</groupId>
             <artifactId>jets3t</artifactId>
             <version>0.9.4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-core-asl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-mapper-asl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.jamesmurty.utils</groupId>
+                    <artifactId>java-xmlbuilder</artifactId>
+                </exclusion>
+                <!-- CVE-2016-1000338, CVE-2020-15522, CVE-2023-33202 in bcprov-jdk15on 1.52 -->
+                <!-- Replaced below with bcprov-jdk18on 1.83 -->
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- CVE-2016-1000338 CVSS 7.5, CVE-2020-15522 CVSS 5.9, CVE-2023-33202 CVSS 5.5 -->
+        <!-- Replaced bcprov-jdk15on:1.52 with bcprov-jdk18on:1.83 (artifact renamed in 1.71+) -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.83</version>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
+            <groupId>com.jamesmurty.utils</groupId>
+            <artifactId>java-xmlbuilder</artifactId>
+            <version>1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.25.3</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.sun.jmx</groupId>
@@ -181,20 +247,31 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- Upgraded from 1.7.30 to 2.0.17: required by log4j-slf4j2-impl -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.30</version>
+            <version>2.0.17</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
-            <version>1.7.30</version>
+            <version>2.0.17</version>
         </dependency>
+        <!-- Replaced slf4j-log4j12 (which pulls in log4j 1.2.17 with Critical CVEs: -->
+        <!-- CVE-2019-17571 CVSS 9.8, CVE-2020-9493 CVSS 9.8, CVE-2022-23305 CVSS 9.8, -->
+        <!-- CVE-2022-23302 CVSS 8.8, CVE-2022-23307 CVSS 8.8, CVE-2023-26464 CVSS 7.5) -->
+        <!-- log4j-slf4j2-impl bridges slf4j to log4j-core 2.x which is already declared -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.30</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>2.25.3</version>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
@@ -205,22 +282,42 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
-            <version>3.2.4</version>
+            <version>3.4.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-beanutils</groupId>
+                    <artifactId>commons-beanutils</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-configuration2</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.11.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>2.13.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs-client</artifactId>
-            <version>3.2.4</version>
+            <version>3.4.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>3.2.4</version>
+            <version>3.4.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-aws</artifactId>
-            <version>3.2.4</version>
+            <version>3.4.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>net.java.dev.jets3t</groupId>
@@ -251,7 +348,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-openstack</artifactId>
-            <version>3.2.4</version>
+            <version>3.4.2</version>
         </dependency>
 
         <!-- Parquet file format dependencies -->
@@ -297,6 +394,10 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- NOTE: libthrift 0.14.0+ fixes CVE-2019-0205, CVE-2019-0210, CVE-2020-13949 -->
+        <!-- but requires source changes: TDeserializer() constructor now throws TTransportException -->
+        <!-- ThriftMessageParser.java must be updated to handle the new checked exception. -->
+        <!-- This requires manual source code modification and is out of scope for auto-remediation. -->
         <dependency>
             <groupId>org.apache.thrift</groupId>
             <artifactId>libthrift</artifactId>
@@ -312,20 +413,24 @@
             <artifactId>curator-framework</artifactId>
             <version>2.13.0</version>
         </dependency>
+        <!-- CVE-2023-2976 CVSS 7.1, CVE-2020-8908 CVSS 3.3: temp dir vulnerabilities -->
+        <!-- Upgraded from 31.1-jre to 33.4.8-jre -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>31.1-jre</version>
+            <version>33.4.8-jre</version>
         </dependency>
         <dependency>
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
-            <version>2.3</version>
+            <version>2.6.0</version>
         </dependency>
+        <!-- CVE-2023-51074 CVSS 5.3: stack overflow in Criteria.parse() -->
+        <!-- Upgraded from 2.4.0 to 2.9.0 -->
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
-            <version>2.4.0</version>
+            <version>2.9.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -380,25 +485,35 @@
             <artifactId>azure-storage</artifactId>
             <version>8.6.5</version>
         </dependency>
+        <!-- NOTE: orc-core 1.9.x+ changes the hive-storage-api dependency structure -->
+        <!-- Upgrading would require source code changes to ORC utility classes. -->
+        <!-- This is left at 1.6.3 pending source compatibility analysis. -->
+        <!-- Known vulnerabilities via transitive hive-storage-api 2.7.1: -->
+        <!-- CVE-2021-34538 CVSS 7.5 (authorization bypass), CVE-2024-23945 CVSS 5.9, -->
+        <!-- CVE-2024-23953 CVSS 6.5, CVE-2024-29869 CVSS 5.5 -->
         <dependency>
             <groupId>org.apache.orc</groupId>
             <artifactId>orc-core</artifactId>
             <version>1.6.3</version>
         </dependency>
+        <!-- Micrometer 1.5.2 ships shaded io.netty 4.1.50.Final with multiple High CVEs: -->
+        <!-- CVE-2021-37136, CVE-2021-37137, CVE-2022-41881, CVE-2023-44487, CVE-2025-55163 -->
+        <!-- Upgraded to 1.12.13: last version that preserves io.micrometer.prometheus package -->
+        <!-- (1.13+ renamed prometheus to io.micrometer.prometheusmetrics, breaking source) -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-jmx</artifactId>
-            <version>1.5.2</version>
+            <version>1.12.13</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-statsd</artifactId>
-            <version>1.5.2</version>
+            <version>1.12.13</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
-            <version>1.5.2</version>
+            <version>1.12.13</version>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -409,7 +524,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-minicluster</artifactId>
-            <version>3.2.4</version>
+            <version>3.4.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -693,10 +808,13 @@
                 </plugins>
             </build>
             <dependencies>
+                <!-- CVE-2025-27818 CVSS 8.8, CVE-2025-27819 CVSS 7.5, CVE-2024-31141 CVSS 6.5 -->
+                <!-- CVE-2021-38153 CVSS 5.9, CVE-2024-56128 CVSS 5.3 -->
+                <!-- Upgraded from 2.3.1 to 3.9.2 -->
                 <dependency>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
-                    <version>2.3.1</version>
+                    <version>3.9.2</version>
                 </dependency>
                 <dependency>
                     <groupId>com.twitter</groupId>
@@ -785,10 +903,11 @@
                 </dependencies>
             </dependencyManagement>
             <dependencies>
+                <!-- CVE-2025-27818, CVE-2025-27819, CVE-2024-31141: Upgraded from 2.3.1 to 3.9.2 -->
                 <dependency>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
-                    <version>2.3.1</version>
+                    <version>3.9.2</version>
                 </dependency>
                 <dependency>
                     <groupId>com.twitter</groupId>
@@ -910,10 +1029,13 @@
                 </plugins>
             </build>
             <dependencies>
+                <!-- CVE-2025-27818 CVSS 8.8, CVE-2025-27819 CVSS 7.5, CVE-2024-31141 CVSS 6.5 -->
+                <!-- CVE-2021-38153 CVSS 5.9, CVE-2024-56128 CVSS 5.3 -->
+                <!-- Upgraded from 2.3.1 to 3.9.2 -->
                 <dependency>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
-                    <version>2.3.1</version>
+                    <version>3.9.2</version>
                 </dependency>
                 <dependency>
                     <groupId>com.twitter</groupId>
