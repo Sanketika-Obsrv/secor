@@ -42,13 +42,16 @@
         <release-version>0.29</release-version>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <encoding>UTF-8</encoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <parquet.version>1.11.0</parquet.version>
 
         <!-- Whether we will using legazy old consumer kafka-legacy or new consumer kafka-2.0.0 -->
         <!-- Name of the directory below src/main/config that contains kafka-version-specific settings -->
-        <kafka.properties>kafka-legacy</kafka.properties>
+        <kafka.properties>kafka-2.0.0</kafka.properties>
+        <dockerfile.repository>secor</dockerfile.repository>
+        <dockerfile.tag>latest</dockerfile.tag>
     </properties>
 
     <distributionManagement>
@@ -84,6 +87,16 @@
 
     <repositories>
         <repository>
+            <id>central</id>
+            <name>Maven Repository Switchboard</name>
+            <layout>default</layout>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
+        <repository>
+            <id>confluent</id>
+            <url>https://packages.confluent.io/maven/</url>
+        </repository>
+        <repository>
             <id>Twitter public Maven repo</id>
             <url>https://maven.twttr.com</url>
         </repository>
@@ -91,19 +104,13 @@
             <id>Typesafe public Maven repo</id>
             <url>https://repo.typesafe.com/typesafe/releases</url>
         </repository>
-        <repository>
-            <id>confluent</id>
-            <url>https://packages.confluent.io/maven/</url>
-        </repository>
-        <repository>
-            <id>central</id>
-            <name>Maven Repository Switchboard</name>
-            <layout>default</layout>
-            <url>https://repo1.maven.org/maven2/</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
+        <pluginRepository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+        </pluginRepository>
         <pluginRepository>
             <id>Twitter public Maven repo</id>
             <url>https://maven.twttr.com</url>
@@ -369,9 +376,14 @@
         </dependency>
 
         <dependency>
-            <groupId>com.microsoft.azure</groupId>
-            <artifactId>azure-storage</artifactId>
-            <version>8.6.5</version>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-storage-blob</artifactId>
+            <version>12.25.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-identity</artifactId>
+            <version>1.11.3</version>
         </dependency>
         <dependency>
             <groupId>org.apache.orc</groupId>
@@ -618,6 +630,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -673,12 +686,13 @@
                                 <id>default</id>
                                 <goals>
                                     <goal>build</goal>
+                                    <goal>push</goal>
                                 </goals>
                             </execution>
                         </executions>
                         <configuration>
-                            <repository>secor</repository>
-                            <tag>${release-version}</tag>
+                            <repository>${dockerfile.repository}</repository>
+                            <tag>${dockerfile.tag}</tag>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -709,7 +723,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/timestamp/*</exclude>
@@ -795,7 +809,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/timestamp/Kafka10MessageTimestamp.java</exclude>
@@ -832,7 +846,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/common/SecorKafkaClient.java</exclude>
@@ -886,7 +900,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/timestamp/*</exclude>
@@ -920,7 +934,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/common/SecorKafkaClient.java</exclude>
@@ -965,7 +979,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>${maven-compiler-plugin.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>com/pinterest/secor/common/SecorKafkaClient.java</exclude>
