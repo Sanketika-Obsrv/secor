@@ -45,9 +45,46 @@
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <encoding>UTF-8</encoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <parquet.version>1.11.0</parquet.version>
+        <kafka.clients.version>4.0.0</kafka.clients.version>
+        <log4j2.version>2.25.3</log4j2.version>
+        <commons-configuration2.version>2.10.1</commons-configuration2.version>
+        <jackson.version>2.18.2</jackson.version>
+        <jackson-databind.version>2.18.2</jackson-databind.version>
+        <!-- Security: Upgraded 3.3.6 → 3.4.3 to fix CVE-2025-27821 (HIGH - out-of-bounds write
+             in HDFS native client URI parser; affects 3.2.0-3.4.1, fixed in 3.4.2+). -->
+        <hadoop.version>3.4.3</hadoop.version>
+        <!-- Security: Upgraded 1.12.0 → 1.12.1 to fix BDSA-2026-2029 (HIGH, CVSS 9.8 - code injection via user-provided Avro schemas) -->
+        <avro.version>1.12.1</avro.version>
+        <slf4j.version>1.7.36</slf4j.version>
+        <parquet.version>1.15.2</parquet.version>
+        <json-smart.version>2.5.2</json-smart.version>
+        <aircompressor.version>0.27</aircompressor.version>
+        <!-- Security: pinned transitive dependency versions -->
+        <netty.version>4.2.8.Final</netty.version>
+        <commons-text.version>1.12.0</commons-text.version>
+        <snappy-java.version>1.1.10.7</snappy-java.version>
+        <commons-compress.version>1.27.1</commons-compress.version>
+        <protobuf.version>3.25.5</protobuf.version>
+        <guava.version>33.3.1-jre</guava.version>
+        <!-- Security: Upgraded 3.8.4 → 3.8.6 to fix CVE-2026-24308 (HIGH - sensitive info
+             disclosure via INFO-level logging of client config values) and CVE-2026-24281
+             (HIGH - hostname verification bypass via reverse-DNS fallback in ZKTrustManager).
+             Both CVEs affect 3.8.0-3.8.5; fixed in 3.8.6 (released 2026-01-28).
+             Curator 5.5.0+ required for ZooKeeper 3.8.x compatibility. -->
+        <zookeeper.version>3.8.6</zookeeper.version>
+        <woodstox-core.version>6.7.0</woodstox-core.version>
+        <jetty.version>9.4.57.v20241219</jetty.version>
+        <!-- Security: transitive dependency version overrides for Black Duck MEDIUM findings -->
+        <junit.version>4.13.2</junit.version>
+        <powermock.version>2.0.9</powermock.version>
+        <commons-io.version>2.17.0</commons-io.version>
+        <kotlin.version>1.9.25</kotlin.version>
+        <!-- Security: Upgraded 9.37.3 → 10.8 to fix BDSA-2025-6849 (MEDIUM, CVSS 5.3 - uncontrolled recursion via deeply nested JSON) -->
+        <nimbus-jose-jwt.version>10.8</nimbus-jose-jwt.version>
+        <okio.version>3.9.0</okio.version>
+        <scala.version>2.11.12</scala.version>
 
-        <!-- Whether we will using legazy old consumer kafka-legacy or new consumer kafka-2.0.0 -->
+        <!-- Whether we will using legazy old consumer kafka-legacy or new consumer kafka-4.0.0 -->
         <!-- Name of the directory below src/main/config that contains kafka-version-specific settings -->
         <kafka.properties>kafka-legacy</kafka.properties>
         <dockerfile.repository>secor</dockerfile.repository>
@@ -70,17 +107,408 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
-                <version>2.11.1</version>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.11.0</version>
+                <version>${jackson-databind.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>2.11.1</version>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>aircompressor</artifactId>
+                <version>${aircompressor.version}</version>
+            </dependency>
+            <!-- Security: Force Netty 4.x to safe version (CVE fixes for 4.1.48/4.1.63/4.1.89) -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-resolver</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <!-- Security: Prevent Netty 3.x from being bundled (EOL) -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty</artifactId>
+                <version>3.10.6.Final</version>
+                <scope>provided</scope>
+            </dependency>
+            <!-- Security: commons-text safe version (CVE-2022-42889 RCE fix) -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${commons-text.version}</version>
+            </dependency>
+            <!-- Security: snappy-java safe version -->
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>${snappy-java.version}</version>
+            </dependency>
+            <!-- Security: commons-compress safe version -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
+            </dependency>
+            <!-- Security: Override transitive SLF4J 1.7.21 (HIGH CVE) to 1.7.36 -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jcl-over-slf4j</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>log4j-over-slf4j</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <!-- Security: Prevent slf4j-log4j12 bridge (routes SLF4J to log4j 1.x) from being bundled -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <!-- Security: Prevent log4j 1.x (CRITICAL, EOL) from being bundled -->
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>1.2.17</version>
+                <scope>provided</scope>
+            </dependency>
+            <!-- Security: ZooKeeper pinned to safe version - Curator 5.5.0+ required for ZooKeeper 3.8.x compatibility -->
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>${zookeeper.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- Security: Woodstox safe version (MEDIUM CVE) -->
+            <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>${woodstox-core.version}</version>
+            </dependency>
+            <!-- Security: Jetty safe version (HIGH CVE, overrides Hadoop transitive 9.4.51) -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-io</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-webapp</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <!-- Security: Pin Jetty WebSocket modules to safe version (HIGH CVE in 9.4.51) -->
+            <dependency>
+                <groupId>org.eclipse.jetty.websocket</groupId>
+                <artifactId>websocket-client</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.websocket</groupId>
+                <artifactId>websocket-common</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.websocket</groupId>
+                <artifactId>websocket-api</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.websocket</groupId>
+                <artifactId>websocket-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.websocket</groupId>
+                <artifactId>websocket-servlet</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.websocket</groupId>
+                <artifactId>javax-websocket-server-impl</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.websocket</groupId>
+                <artifactId>javax-websocket-client-impl</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <!-- Security: Lock commons-beanutils to prevent older vulnerable versions (2.0.0 requires Java 11, pinned for transitive override) -->
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>1.9.4</version>
+            </dependency>
+            <!-- Security: Prevent legacy dnsjava 2.x (HIGH CVE, not used by application) -->
+            <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>2.1.7</version>
+                <scope>provided</scope>
+            </dependency>
+            <!-- Security: protobuf safe version (MEDIUM CVE) -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java-util</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+            <!-- Security: guava safe version (MEDIUM CVE) -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <!-- Security: json-smart safe version (MEDIUM CVE) -->
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>${json-smart.version}</version>
+            </dependency>
+            <!-- Security: Bouncy Castle safe version (MEDIUM CVE) -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>1.70</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.78.1</version>
+            </dependency>
+            <!-- Pin hive-storage-api to match orc-core 1.9.6 requirement -->
+            <dependency>
+                <groupId>org.apache.hive</groupId>
+                <artifactId>hive-storage-api</artifactId>
+                <version>2.8.1</version>
+            </dependency>
+            <!-- Security: Force orc-core to safe version, exclude older transitive versions -->
+            <dependency>
+                <groupId>org.apache.orc</groupId>
+                <artifactId>orc-core</artifactId>
+                <version>1.9.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.orc</groupId>
+                <artifactId>orc-shims</artifactId>
+                <version>1.9.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.orc</groupId>
+                <artifactId>orc-tools</artifactId>
+                <version>1.9.6</version>
+            </dependency>
+            <!-- Security: Force all parquet artifacts to safe version 1.15.2 (CRITICAL CVE-2025-30065 in 1.15.0/1.15.1) -->
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-avro</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-common</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-encoding</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-column</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-hadoop</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-protobuf</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-thrift</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-format-structures</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <!-- Security: commons-lang3 safe version (MEDIUM CVE on 3.14.0) -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.17.0</version>
+            </dependency>
+            <!-- Security: Pin commons-lang 2.x to 2.6 (latest stable, MEDIUM CVE on 2.4) -->
+            <dependency>
+                <groupId>commons-lang</groupId>
+                <artifactId>commons-lang</artifactId>
+                <version>2.6</version>
+            </dependency>
+            <!-- Security: Pin msgpack-core to 0.9.11 (fixes BDSA-2026-0108 DoS in 0.8.x) -->
+            <dependency>
+                <groupId>org.msgpack</groupId>
+                <artifactId>msgpack-core</artifactId>
+                <version>0.9.11</version>
+            </dependency>
+            <!-- Security: Pin lz4-java to 1.8.1 (precautionary; actual transitive is at.yawk.lz4 from Kafka) -->
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>1.8.1</version>
+            </dependency>
+            <!-- Security: Pin at.yawk.lz4:lz4-java (pulled by kafka-clients:4.0.0) to 1.10.3 to fix BDSA-2025-48149 (MEDIUM, CVSS 5.9) -->
+            <dependency>
+                <groupId>at.yawk.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>1.10.3</version>
+            </dependency>
+            <!-- Security: Force JUnit to safe version (MEDIUM CVE); PowerMock 2.x declares junit:4.12 transitively.
+                 This BOM entry ensures Maven mediation resolves to 4.13.2 across all transitive paths. -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <!-- Security: Override hadoop-common transitive commons-io:2.8.0 (MEDIUM CVE) to safe version -->
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+            <!-- Security: Override okhttp3:4.9.3 transitive kotlin-stdlib:1.4.10 (MEDIUM CVE) to latest LTS.
+                 kotlin-stdlib 1.9.x is backward-compatible at runtime with code compiled against 1.4.x. -->
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-common</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <!-- Security: Override hadoop-auth transitive nimbus-jose-jwt:9.8.1 (MEDIUM CVE) to safe version -->
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>${nimbus-jose-jwt.version}</version>
+            </dependency>
+            <!-- Security: Override okhttp3:4.9.3 transitive okio:2.8.0 (MEDIUM CVE) to safe version.
+                 okio 3.x is backward-compatible on JVM with code compiled against okio 2.x. -->
+            <dependency>
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio</artifactId>
+                <version>${okio.version}</version>
+            </dependency>
+            <!-- Security: Override old scala-library:2.11.8 (MEDIUM CVE) pulled by build-docker-image profile
+                 (ostrich_2.11, kafka_2.11) to the last 2.11.x patch release. Binary-compatible with 2.11 artifacts. -->
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${scala.version}</version>
+            </dependency>
+            <!-- Security: Also pin scala-reflect and scala-compiler to 2.11.12 (fixes BD flagging of 2.11.8) -->
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-reflect</artifactId>
+                <version>${scala.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-compiler</artifactId>
+                <version>${scala.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -126,11 +554,25 @@
             <groupId>io.confluent</groupId>
             <artifactId>kafka-avro-serializer</artifactId>
             <version>2.0.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-            <version>1.10.0</version>
+            <version>${avro.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.parquet</groupId>
@@ -140,87 +582,160 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>3.22.2</version>
+            <version>${protobuf.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java-util</artifactId>
-            <version>3.22.2</version>
+            <version>${protobuf.version}</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
             <version>1.12.468</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>software.amazon.ion</groupId>
+                    <artifactId>ion-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-sts</artifactId>
             <version>1.12.468</version>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.jets3t</groupId>
-            <artifactId>jets3t</artifactId>
-            <version>0.9.4</version>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
             <exclusions>
                 <exclusion>
-                    <groupId>com.sun.jmx</groupId>
-                    <artifactId>jmxri</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jdmk</groupId>
-                    <artifactId>jmxtools</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.jms</groupId>
-                    <artifactId>jms</artifactId>
+                    <groupId>software.amazon.ion</groupId>
+                    <artifactId>ion-java</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.30</version>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
-            <version>1.7.30</version>
+            <version>${slf4j.version}</version>
         </dependency>
+        <!-- Bridge log4j 1.x API calls to SLF4J (log4j 1.x is EOL/CRITICAL CVE) -->
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.30</version>
+            <artifactId>log4j-over-slf4j</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
-            <version>1.10</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>${commons-configuration2.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
-            <version>3.2.4</version>
+            <version>${hadoop.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.jettison</groupId>
+                    <artifactId>jettison</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>dnsjava</groupId>
+                    <artifactId>dnsjava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-beanutils</groupId>
+                    <artifactId>commons-beanutils</artifactId>
+                </exclusion>
+                <!-- Security: Exclude logback (MEDIUM CVE); app uses log4j2 as SLF4J binding -->
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs-client</artifactId>
-            <version>3.2.4</version>
+            <version>${hadoop.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>3.2.4</version>
+            <version>${hadoop.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>
+                <!-- Security: Exclude YARN modules that bundle Bootstrap/jQuery/DataTables/jQuery UI
+                     as web UI resources inside hadoop-yarn-common.jar (webapps/static/ directory).
+                     Secor has zero YARN or MapReduce job-submission code; these modules are not used
+                     at runtime and only inflate the dependency surface. MapReduce client-core's own
+                     classes (Job, TaskAttemptContext, FileOutputFormat) used by Parquet do not
+                     depend on YARN at runtime. -->
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-yarn-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-yarn-common</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-aws</artifactId>
-            <version>3.2.4</version>
+            <version>${hadoop.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>net.java.dev.jets3t</groupId>
@@ -246,12 +761,30 @@
                     <groupId>com.amazonaws</groupId>
                     <artifactId>aws-java-sdk-bundle</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-openstack</artifactId>
-            <version>3.2.4</version>
+            <version>${hadoop.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Parquet file format dependencies -->
@@ -298,39 +831,50 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.codehaus.jettison</groupId>
+            <artifactId>jettison</artifactId>
+            <version>1.5.4</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.thrift</groupId>
             <artifactId>libthrift</artifactId>
-            <version>0.12.0</version>
+            <version>0.16.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-client</artifactId>
-            <version>2.13.0</version>
+            <version>5.5.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-framework</artifactId>
-            <version>2.13.0</version>
+            <version>5.5.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>31.1-jre</version>
+            <version>${guava.version}</version>
         </dependency>
         <dependency>
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
-            <version>2.3</version>
+            <version>${json-smart.version}</version>
+        </dependency>
+        <!-- Required by ChannelDateMessageParser and PatternDateMessageParser (defaultIfBlank) -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.17.0</version>
         </dependency>
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
-            <version>2.4.0</version>
+            <version>2.9.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -341,17 +885,33 @@
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito2</artifactId>
-            <version>2.0.7</version>
+            <version>${powermock.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <!-- Security: Exclude junit:4.12 declared by PowerMock; junit:4.13.2 is enforced via dependencyManagement -->
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>2.0.7</version>
+            <version>${powermock.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <!-- Security: Exclude junit:4.12 declared by PowerMock; junit:4.13.2 is enforced via dependencyManagement -->
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.msgpack</groupId>
             <artifactId>jackson-dataformat-msgpack</artifactId>
-            <version>0.8.20</version>
+            <version>0.9.11</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -383,7 +943,13 @@
         <dependency>
             <groupId>org.apache.orc</groupId>
             <artifactId>orc-core</artifactId>
-            <version>1.6.3</version>
+            <version>1.9.6</version>
+        </dependency>
+        <!-- Required by orc-core 1.9.6: Hive vector classes no longer bundled in orc-core jar -->
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-storage-api</artifactId>
+            <version>2.8.1</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
@@ -403,14 +969,59 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>4.0.0</version>
+            <version>${kafka.clients.version}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-minicluster -->
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-minicluster</artifactId>
-            <version>3.2.4</version>
+            <version>${hadoop.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <!-- Security: Exclude Netty 3.x (HIGH CVE, no safe upgrade exists for 3.x line) -->
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>
+                <!-- Security: Exclude dnsjava 2.x (HIGH CVE) pulled via hadoop-common:test-jar -->
+                <exclusion>
+                    <groupId>dnsjava</groupId>
+                    <artifactId>dnsjava</artifactId>
+                </exclusion>
+                <!-- Security: Exclude commons-beanutils 1.9.4 (HIGH CVE) from test-jar chain -->
+                <exclusion>
+                    <groupId>commons-beanutils</groupId>
+                    <artifactId>commons-beanutils</artifactId>
+                </exclusion>
+                <!-- Security: Exclude json-io 2.5.1 (HIGH CVE) from yarn test-jar chain -->
+                <exclusion>
+                    <groupId>com.cedarsoftware</groupId>
+                    <artifactId>json-io</artifactId>
+                </exclusion>
+                <!-- Security: Exclude Bouncy Castle 1.70/1.68 (MEDIUM CVE) from yarn-web-proxy -->
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcpkix-jdk15on</artifactId>
+                </exclusion>
+                <!-- Security: Exclude logback (MEDIUM CVE); app uses log4j2 as SLF4J binding -->
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+                <!-- Security: Exclude MSSQL JDBC 6.2.1.jre7 (MEDIUM CVE BDSA-2025-15461); Secor tests don't use SQL Server -->
+                <exclusion>
+                    <groupId>com.microsoft.sqlserver</groupId>
+                    <artifactId>mssql-jdbc</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
@@ -421,7 +1032,7 @@
                 <!-- Exclude the variable parts, these are copied by the respective profiles -->
                 <excludes>
                     <exclude>kafka-legacy/**</exclude>
-                    <exclude>kafka-2.0.0/**</exclude>
+                    <exclude>kafka-4.0.0/**</exclude>
                 </excludes>
             </resource>
         </resources>
@@ -696,23 +1307,43 @@
                 <dependency>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
-                    <version>2.3.1</version>
+                    <version>${kafka.clients.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>com.twitter</groupId>
                     <artifactId>ostrich_2.11</artifactId>
                     <version>9.27.0</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>log4j</groupId>
+                            <artifactId>log4j</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.slf4j</groupId>
+                            <artifactId>slf4j-log4j12</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
                 <dependency>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka_2.11</artifactId>
                     <version>1.0.0</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>log4j</groupId>
+                            <artifactId>log4j</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.slf4j</groupId>
+                            <artifactId>slf4j-log4j12</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
         </profile>
         <profile>
             <id>release</id>
-            <!-- Matches kafka-2.0.0 , just this one includes gpg signing, javadoc etc -->
+            <!-- Matches kafka-4.0.0 , just this one includes gpg signing, javadoc etc -->
             <build>
                 <plugins>
                     <plugin>
@@ -788,98 +1419,38 @@
                 <dependency>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
-                    <version>2.3.1</version>
+                    <version>${kafka.clients.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>com.twitter</groupId>
                     <artifactId>ostrich_2.11</artifactId>
                     <version>9.27.0</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>kafka-0.8.2.1</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>${maven-compiler-plugin.version}</version>
-                        <configuration>
-                            <excludes>
-                                <exclude>com/pinterest/secor/timestamp/Kafka10MessageTimestamp.java</exclude>
-                                <exclude>com/pinterest/secor/common/SecorKafkaClient.java</exclude>
-                                <exclude>com/pinterest/secor/reader/SecorKafkaMessageIterator.java</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_2.10</artifactId>
-                    <version>0.10.2.2</version>
                     <exclusions>
                         <exclusion>
+                            <groupId>log4j</groupId>
+                            <artifactId>log4j</artifactId>
+                        </exclusion>
+                        <exclusion>
                             <groupId>org.slf4j</groupId>
-                            <artifactId>slf4j-simple</artifactId>
+                            <artifactId>slf4j-log4j12</artifactId>
                         </exclusion>
                     </exclusions>
                 </dependency>
-                <dependency>
-                    <groupId>com.twitter</groupId>
-                    <artifactId>ostrich_2.10</artifactId>
-                    <version>9.18.0</version>
-                </dependency>
             </dependencies>
         </profile>
         <profile>
-            <id>kafka-1.0.0</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>${maven-compiler-plugin.version}</version>
-                        <configuration>
-                            <excludes>
-                                <exclude>com/pinterest/secor/common/SecorKafkaClient.java</exclude>
-                                <exclude>com/pinterest/secor/reader/SecorKafkaMessageIterator.java</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.fasterxml.jackson.module</groupId>
-                        <artifactId>jackson-module-scala_2.11</artifactId>
-                        <version>2.11.1</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_2.11</artifactId>
-                    <version>1.0.0</version>
-                </dependency>
-                <dependency>
-                    <groupId>com.twitter</groupId>
-                    <artifactId>ostrich_2.11</artifactId>
-                    <version>9.27.0</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>kafka-2.0.0</id>
+            <id>kafka-4.0.0</id>
             <properties>
-                <kafka.properties>kafka-2.0.0</kafka.properties>
+                <kafka.properties>kafka-4.0.0</kafka.properties>
             </properties>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <!-- File-based activation (instead of activeByDefault) ensures this profile
+                     stays active even when other profiles are conditionally activated (e.g.,
+                     the windows-skip-protoc OS profile). activeByDefault is suppressed by
+                     Maven whenever any other profile activates. -->
+                <file>
+                    <exists>pom.xml</exists>
+                </file>
             </activation>
             <dependencyManagement>
                 <dependencies>
@@ -913,104 +1484,57 @@
                 <dependency>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
-                    <version>2.3.1</version>
+                    <version>${kafka.clients.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>com.twitter</groupId>
                     <artifactId>ostrich_2.11</artifactId>
                     <version>9.27.0</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>kafka-0.10.2.0</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>${maven-compiler-plugin.version}</version>
-                        <configuration>
-                            <excludes>
-                                <exclude>com/pinterest/secor/common/SecorKafkaClient.java</exclude>
-                                <exclude>com/pinterest/secor/reader/SecorKafkaMessageIterator.java</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.fasterxml.jackson.module</groupId>
-                        <artifactId>jackson-module-scala_2.10</artifactId>
-                        <version>2.11.1</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_2.10</artifactId>
-                    <version>0.10.2.2</version>
                     <exclusions>
                         <exclusion>
+                            <groupId>log4j</groupId>
+                            <artifactId>log4j</artifactId>
+                        </exclusion>
+                        <exclusion>
                             <groupId>org.slf4j</groupId>
-                            <artifactId>slf4j-simple</artifactId>
+                            <artifactId>slf4j-log4j12</artifactId>
                         </exclusion>
                     </exclusions>
                 </dependency>
-                <dependency>
-                    <groupId>com.twitter</groupId>
-                    <artifactId>ostrich_2.10</artifactId>
-                    <version>9.18.0</version>
-                </dependency>
             </dependencies>
         </profile>
+        <!-- On Windows, protoc-jar-maven-plugin cannot download a protoc binary
+             (network blocked, no bundled Windows x86_64 binary for protoc 3.21.12).
+             This profile auto-activates on Windows to skip the test-source generation
+             and test compilation so that `mvn clean install -DskipTests` succeeds.
+             CI runs on Linux (corretto11) and is unaffected. -->
         <profile>
-            <id>kafka-0.10.0.1</id>
+            <id>windows-skip-protoc</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <!-- Skip test compilation so missing generated proto sources don't break the build -->
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>${maven-compiler-plugin.version}</version>
-                        <configuration>
-                            <excludes>
-                                <exclude>com/pinterest/secor/common/SecorKafkaClient.java</exclude>
-                                <exclude>com/pinterest/secor/reader/SecorKafkaMessageIterator.java</exclude>
-                            </excludes>
-                        </configuration>
+                        <groupId>com.github.os72</groupId>
+                        <artifactId>protoc-jar-maven-plugin</artifactId>
+                        <version>3.11.4</version>
+                        <executions>
+                            <execution>
+                                <id>protobuf-test-sources</id>
+                                <!-- Disable this execution on Windows -->
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.fasterxml.jackson.module</groupId>
-                        <artifactId>jackson-module-scala_2.10</artifactId>
-                        <version>2.11.1</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_2.10</artifactId>
-                    <version>0.10.2.2</version>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.slf4j</groupId>
-                            <artifactId>slf4j-simple</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-                <dependency>
-                    <groupId>com.twitter</groupId>
-                    <artifactId>ostrich_2.10</artifactId>
-                    <version>9.18.0</version>
-                </dependency>
-            </dependencies>
         </profile>
     </profiles>
 </project>

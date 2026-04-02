@@ -24,7 +24,6 @@ integration: build
 	@cp $(TEST_CONFIG)/* $(TEST_HOME)
 	@cp docker-compose.yaml $(TEST_HOME)
 	@[ ! -e $(CONFIG)/core-site.xml ] && jar uf $(TEST_HOME)/secor-*.jar -C $(TEST_CONFIG) core-site.xml
-	@[ ! -e $(CONFIG)/jets3t.properties ] && jar uf $(TEST_HOME)/secor-*.jar -C $(TEST_CONFIG) jets3t.properties
 	cd $(TEST_HOME) && ./scripts/run_tests.sh
 
 test: build unit integration

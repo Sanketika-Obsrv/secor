@@ -24,6 +24,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
+import org.apache.thrift.transport.TTransportException;
 
 import com.pinterest.secor.common.SecorConfig;
 import com.pinterest.secor.message.Message;
@@ -71,7 +72,11 @@ public class ThriftMessageParser extends TimestampedMessageParser {
         } else
             protocolFactory = new TBinaryProtocol.Factory();
         
-        mDeserializer = new TDeserializer(protocolFactory);
+        try {
+            mDeserializer = new TDeserializer(protocolFactory);
+        } catch (TTransportException e) {
+            throw new RuntimeException("Error creating TDeserializer", e);
+        }
         mThriftPath = new ThriftPath(mConfig.getMessageTimestampName(),(short) mConfig.getMessageTimestampId());
         mTimestampType = mConfig.getMessageTimestampType();
     }
@@ -79,12 +84,15 @@ public class ThriftMessageParser extends TimestampedMessageParser {
     @Override
     public long extractTimestampMillis(final Message message) throws TException {
         long timestamp;
-        if ("i32".equals(mTimestampType)) {
-            timestamp = (long) mDeserializer.partialDeserializeI32(message.getPayload(), mThriftPath);
-        } else {
-            timestamp = mDeserializer.partialDeserializeI64(message.getPayload(), mThriftPath);
+        try {
+            if ("i32".equals(mTimestampType)) {
+                timestamp = (long) mDeserializer.partialDeserializeI32(message.getPayload(), mThriftPath);
+            } else {
+                timestamp = mDeserializer.partialDeserializeI64(message.getPayload(), mThriftPath);
+            }
+        } catch (TTransportException e) {
+            throw new TException(e);
         }
-
-        return toMillis(timestamp);
+        return timestamp;
     }
 }

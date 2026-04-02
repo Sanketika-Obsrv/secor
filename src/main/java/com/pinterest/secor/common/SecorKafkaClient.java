@@ -25,6 +25,7 @@ import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.thrift.TException;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +51,7 @@ public class SecorKafkaClient implements KafkaClient {
 
     @Override
     public int getNumPartitions(String topic) {
-        Map<String, KafkaFuture<TopicDescription>> description = mKafkaAdminClient.describeTopics(Collections.singleton(topic)).values();
+        Map<String, KafkaFuture<TopicDescription>> description = mKafkaAdminClient.describeTopics(Collections.singleton(topic)).topicNameValues();
         int numPartitions;
         try {
             numPartitions = description.get(topic).get().partitions().size();
@@ -74,7 +76,8 @@ public class SecorKafkaClient implements KafkaClient {
     public Message getCommittedMessage(TopicPartition topicPartition) throws Exception {
         org.apache.kafka.common.TopicPartition kafkaTopicPartition = new org.apache.kafka.common.TopicPartition(topicPartition.getTopic(), topicPartition.getPartition());
         mKafkaConsumer.assign(Collections.singleton(kafkaTopicPartition));
-        long committedOffset = mKafkaConsumer.committed(kafkaTopicPartition).offset();
+        OffsetAndMetadata offsetAndMetadata = mKafkaConsumer.committed(Collections.singleton(kafkaTopicPartition)).get(kafkaTopicPartition);
+        long committedOffset = offsetAndMetadata != null ? offsetAndMetadata.offset() : -1;
         mKafkaConsumer.seek(kafkaTopicPartition, committedOffset - 1);
         return readSingleMessage(mKafkaConsumer);
     }

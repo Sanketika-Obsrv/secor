@@ -20,10 +20,13 @@ package com.pinterest.secor.common;
 
 import com.pinterest.secor.protobuf.Messages.UnitTestMessage1;
 import com.pinterest.secor.protobuf.Messages.UnitTestMessage2;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.junit.Test;
 
+import java.io.File;
 import java.net.URL;
 import java.util.Map;
 
@@ -31,11 +34,19 @@ import static org.junit.Assert.assertEquals;
 
 public class SecorConfigTest {
 
-    @Test
-    public void config_should_read_migration_required_properties_default_values() throws ConfigurationException {
+    private PropertiesConfiguration loadProperties(String resourceName) throws ConfigurationException {
+        URL configFile = Thread.currentThread().getContextClassLoader().getResource(resourceName);
+        Parameters params = new Parameters();
+        FileBasedConfigurationBuilder<PropertiesConfiguration> builder =
+                new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
+                        .configure(params.properties()
+                                .setFileName(configFile.getPath()));
+        return builder.getConfiguration();
+    }
 
-        URL configFile = Thread.currentThread().getContextClassLoader().getResource("secor.common.properties");
-        PropertiesConfiguration properties = new PropertiesConfiguration(configFile);
+    @Test
+    public void config_should_read_migration_required_properties_default_values() throws Exception {
+        PropertiesConfiguration properties = loadProperties("secor.common.properties");
 
         SecorConfig secorConfig = new SecorConfig(properties);
         assertEquals("true", secorConfig.getDualCommitEnabled());
@@ -43,10 +54,8 @@ public class SecorConfigTest {
     }
 
     @Test
-    public void config_should_read_migration_required() throws ConfigurationException {
-
-        URL configFile = Thread.currentThread().getContextClassLoader().getResource("secor.kafka.migration.test.properties");
-        PropertiesConfiguration properties = new PropertiesConfiguration(configFile);
+    public void config_should_read_migration_required() throws Exception {
+        PropertiesConfiguration properties = loadProperties("secor.kafka.migration.test.properties");
 
         SecorConfig secorConfig = new SecorConfig(properties);
         assertEquals("false", secorConfig.getDualCommitEnabled());
@@ -54,10 +63,8 @@ public class SecorConfigTest {
     }
 
     @Test
-    public void testProtobufMessageClassPerTopic() throws ConfigurationException {
-
-        URL configFile = Thread.currentThread().getContextClassLoader().getResource("secor.test.protobuf.properties");
-        PropertiesConfiguration properties = new PropertiesConfiguration(configFile);
+    public void testProtobufMessageClassPerTopic() throws Exception {
+        PropertiesConfiguration properties = loadProperties("secor.test.protobuf.properties");
 
         SecorConfig secorConfig = new SecorConfig(properties);
         Map<String, String> messageClassPerTopic = secorConfig.getProtobufMessageClassPerTopic();
@@ -68,10 +75,8 @@ public class SecorConfigTest {
     }
 
     @Test
-    public void shouldReadMetricCollectorConfiguration() throws ConfigurationException {
-
-        URL configFile = Thread.currentThread().getContextClassLoader().getResource("secor.test.monitoring.properties");
-        PropertiesConfiguration properties = new PropertiesConfiguration(configFile);
+    public void shouldReadMetricCollectorConfiguration() throws Exception {
+        PropertiesConfiguration properties = loadProperties("secor.test.monitoring.properties");
 
         SecorConfig secorConfig = new SecorConfig(properties);
 
@@ -79,10 +84,8 @@ public class SecorConfigTest {
     }
 
     @Test
-    public void shouldCheckIfConfigurationExists() throws ConfigurationException {
-
-        URL configFile = Thread.currentThread().getContextClassLoader().getResource("secor.test1.partition.properties");
-        PropertiesConfiguration properties = new PropertiesConfiguration(configFile);
+    public void shouldCheckIfConfigurationExists() throws Exception {
+        PropertiesConfiguration properties = loadProperties("secor.test1.partition.properties");
 
         SecorConfig secorConfig = new SecorConfig(properties);
 

@@ -28,6 +28,7 @@ import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
+import org.apache.thrift.transport.TTransportException;
 
 import com.pinterest.secor.thrift.TestMessage;
 import com.pinterest.secor.thrift.TestEnum;
@@ -77,7 +78,12 @@ public class TestLogMessageProducer extends Thread {
             throw new RuntimeException("Undefined message encoding type: " + mType);
         }
 
-        TSerializer serializer = new TSerializer(protocol);
+        TSerializer serializer;
+        try {
+            serializer = new TSerializer(protocol);
+        } catch (TTransportException e) {
+            throw new RuntimeException(e);
+        }
         for (int i = 0; i < mNumMessages; ++i) {
             long time = (System.currentTimeMillis() - mTimeshift * 1000L) * 1000000L + i;
             TestMessage testMessage = new TestMessage(time,
