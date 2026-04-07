@@ -52,6 +52,54 @@
         <kafka.properties>kafka-legacy</kafka.properties>
         <dockerfile.repository>secor</dockerfile.repository>
         <dockerfile.tag>latest</dockerfile.tag>
+
+        <!-- Security-pinned dependency versions (managed to resolve Dependabot alerts) -->
+        <!-- CVE-2025-68161: Log4j TLS hostname verification bypass -->
+        <log4j.version>2.25.3</log4j.version>
+        <!-- CVE-2024-57699, CVE-2023-1370: json-smart uncontrolled recursion -->
+        <json-smart.version>2.5.2</json-smart.version>
+        <!-- CVE-2025-27817: Kafka client SSRF/file read -->
+        <kafka-clients.version>3.9.1</kafka-clients.version>
+        <!-- CVE-2025-67721: aircompressor info leak in decompressor -->
+        <aircompressor.version>2.0.3</aircompressor.version>
+        <!-- CVE-2025-12183: lz4-java out-of-bounds operations -->
+        <lz4-java.version>1.8.1</lz4-java.version>
+        <!-- CVE-2023-43642 + 3 more: snappy-java DoS / OOB -->
+        <snappy-java.version>1.1.10.4</snappy-java.version>
+        <!-- CVE-2024-25638: dnsjava DNSSEC bypass -->
+        <dnsjava.version>3.6.0</dnsjava.version>
+        <!-- CVE-2024-47554: commons-io XmlStreamReader DoS -->
+        <commons-io.version>2.14.0</commons-io.version>
+        <!-- CVE-2025-48734: commons-beanutils improper access control -->
+        <commons-beanutils.version>1.11.0</commons-beanutils.version>
+        <!-- CVE-2024-29131, CVE-2024-29133: commons-configuration2 StackOverflowError -->
+        <commons-configuration2.version>2.10.1</commons-configuration2.version>
+        <!-- CVE-2025-48924: commons-lang3 uncontrolled recursion -->
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <!-- CVE-2020-13956: httpclient cross-site scripting -->
+        <httpclient.version>4.5.13</httpclient.version>
+        <!-- CVE-2023-52428, CVE-2025-53864: nimbus-jose-jwt DoS -->
+        <nimbus-jose-jwt.version>9.37.4</nimbus-jose-jwt.version>
+        <!-- CVE-2023-1436 + 4 more: jettison out-of-bounds write / DoS -->
+        <jettison.version>1.5.4</jettison.version>
+        <!-- CVE-2024-8184, CVE-2024-13009 + more: jetty server/http vulnerabilities -->
+        <jetty.version>9.4.57.v20241219</jetty.version>
+        <!-- CVE-2014-125087: java-xmlbuilder XXE injection -->
+        <java-xmlbuilder.version>1.2</java-xmlbuilder.version>
+        <!-- CVE-2018-1000180 + 16 more: BouncyCastle cryptographic vulnerabilities -->
+        <bouncycastle.version>1.79</bouncycastle.version>
+        <!-- CVE-2023-44981 (CRITICAL): ZooKeeper authorization bypass -->
+        <zookeeper.version>3.7.2</zookeeper.version>
+        <!-- CVE-2026-33871 + 9 more: Netty HTTP/2 DoS, request smuggling, etc. -->
+        <netty.version>4.1.132.Final</netty.version>
+        <!-- CVE-2023-3635: okio signed-to-unsigned conversion error -->
+        <okio.version>3.4.0</okio.version>
+        <!-- CVE-2022-24329, CVE-2020-29582: Kotlin stdlib incorrect permissions/locking -->
+        <kotlin.version>1.6.0</kotlin.version>
+        <!-- CVE-2025-55163, CVE-2023-32731/32732: gRPC MadeYouReset / connection confusion -->
+        <grpc.version>1.75.0</grpc.version>
+        <!-- CVE-2026-21452: msgpack-core remote DoS via malicious EXT payload -->
+        <msgpack-core.version>0.9.11</msgpack-core.version>
     </properties>
 
     <distributionManagement>
@@ -81,6 +129,371 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
                 <version>2.18.6</version>
+            </dependency>
+
+            <!-- CVE-2025-68161: Log4j TLS hostname verification bypass -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-1.2-api</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+
+            <!-- CVE-2024-57699, CVE-2023-1370, CVE-2021-27568: json-smart uncontrolled recursion -->
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>${json-smart.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>accessors-smart</artifactId>
+                <version>${json-smart.version}</version>
+            </dependency>
+
+            <!-- CVE-2025-27817: Kafka client arbitrary file read / SSRF -->
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${kafka-clients.version}</version>
+            </dependency>
+
+            <!-- CVE-2025-67721: aircompressor info leak in decompressor -->
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>aircompressor</artifactId>
+                <version>${aircompressor.version}</version>
+            </dependency>
+
+            <!-- CVE-2025-12183: lz4-java out-of-bounds operations causing DoS -->
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${lz4-java.version}</version>
+            </dependency>
+
+            <!-- CVE-2023-43642, CVE-2023-34453/34454/34455: snappy-java DoS / integer overflow -->
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>${snappy-java.version}</version>
+            </dependency>
+
+            <!-- CVE-2024-25638: dnsjava DNSSEC bypass -->
+            <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>${dnsjava.version}</version>
+            </dependency>
+
+            <!-- CVE-2024-47554: commons-io XmlStreamReader denial of service -->
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+
+            <!-- CVE-2025-48734: commons-beanutils improper access control -->
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+            </dependency>
+
+            <!-- CVE-2024-29131, CVE-2024-29133: commons-configuration2 StackOverflowError -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-configuration2</artifactId>
+                <version>${commons-configuration2.version}</version>
+            </dependency>
+
+            <!-- CVE-2025-48924: commons-lang3 uncontrolled recursion -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+
+            <!-- CVE-2020-13956: Apache HttpClient cross-site scripting (via jets3t) -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpclient.version}</version>
+            </dependency>
+
+            <!-- CVE-2023-52428, CVE-2025-53864: nimbus-jose-jwt DoS (via hadoop-auth) -->
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>${nimbus-jose-jwt.version}</version>
+            </dependency>
+
+            <!-- CVE-2023-1436, CVE-2022-45685/45693/40150/40149: jettison DoS / OOB write -->
+            <dependency>
+                <groupId>org.codehaus.jettison</groupId>
+                <artifactId>jettison</artifactId>
+                <version>${jettison.version}</version>
+            </dependency>
+
+            <!-- CVE-2024-8184, CVE-2024-13009, CVE-2024-6763, CVE-2023-40167: Jetty server/http vulnerabilities -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-io</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-security</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-webapp</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <!-- CVE advisory: Eclipse Jetty XmlParser arbitrary DOCTYPE (LOW) -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-xml</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util-ajax</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-client</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+
+            <!-- CVE-2014-125087 (CRITICAL): java-xmlbuilder XXE injection (via jets3t) -->
+            <dependency>
+                <groupId>com.jamesmurty.utils</groupId>
+                <artifactId>java-xmlbuilder</artifactId>
+                <version>${java-xmlbuilder.version}</version>
+            </dependency>
+
+            <!-- CVE-2018-1000180 + 16 more: BouncyCastle cryptographic flaws (via jets3t) -->
+            <!-- NOTE: bcprov-jdk15on was renamed to bcprov-jdk18on after version 1.70 -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <!-- CVE-2025-8916: bcpkix certificate API exposure (via hadoop-minicluster test) -->
+            <!-- NOTE: bcpkix-jdk15on was renamed to bcpkix-jdk18on after version 1.70 -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+
+            <!-- CVE-2023-44981 (CRITICAL): ZooKeeper authorization bypass via SASL -->
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>${zookeeper.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper-jute</artifactId>
+                <version>${zookeeper.version}</version>
+            </dependency>
+
+            <!-- CVE-2026-33871, CVE-2026-33870, CVE-2025-67735, CVE-2025-55163 + more: Netty HTTP/2 DoS, smuggling -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-resolver</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http2</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-smtp</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <!-- CVE-2023-3635: okio signed-to-unsigned conversion error (via hadoop-hdfs-client → okhttp3) -->
+            <dependency>
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio</artifactId>
+                <version>${okio.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio-jvm</artifactId>
+                <version>${okio.version}</version>
+            </dependency>
+
+            <!-- CVE-2022-24329, CVE-2020-29582: Kotlin stdlib incorrect permissions / improper locking -->
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-common</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+
+            <!-- CVE-2025-55163, CVE-2023-32731/32732: gRPC MadeYouReset DoS / connection confusion -->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-api</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-core</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty-shaded</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf-lite</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-auth</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-context</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-alts</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-grpclb</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-services</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-xds</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-googleapis</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-rls</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+
+            <!-- CVE-2026-21452: msgpack-core remote DoS via malicious EXT payload -->
+            <dependency>
+                <groupId>org.msgpack</groupId>
+                <artifactId>msgpack-core</artifactId>
+                <version>${msgpack-core.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -161,21 +574,53 @@
             <groupId>net.java.dev.jets3t</groupId>
             <artifactId>jets3t</artifactId>
             <version>0.9.4</version>
+            <exclusions>
+                <!-- CVE-2014-125087 (CRITICAL): excluded vulnerable 1.1, managed version pins 1.2 -->
+                <exclusion>
+                    <groupId>com.jamesmurty.utils</groupId>
+                    <artifactId>java-xmlbuilder</artifactId>
+                </exclusion>
+                <!-- CVE-2018-1000180 + 16 more: excluded vulnerable 1.52, managed version pins 1.79 -->
+                <!-- NOTE: artifact renamed from bcprov-jdk15on to bcprov-jdk18on after 1.70 -->
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk18on</artifactId>
+                </exclusion>
+                <!-- CVE-2019-10202 (CRITICAL): EOL artifact, no fix available — excluded entirely -->
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-core-asl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-mapper-asl</artifactId>
+                </exclusion>
+                <!-- CVE-2020-13956: excluded vulnerable 4.5, managed version pins 4.5.13 -->
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+        <!-- CVE-2025-68161: upgraded from 2.24.3 to 2.25.3 (first safe version) -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.24.3</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.24.3</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-1.2-api</artifactId>
-            <version>2.24.3</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -190,7 +635,7 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.24.3</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
@@ -337,10 +782,11 @@
             <artifactId>guava</artifactId>
             <version>32.1.3-jre</version>
         </dependency>
+        <!-- CVE-2024-57699, CVE-2023-1370: upgraded from 2.5.0 to 2.5.2 (first safe version) -->
         <dependency>
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
-            <version>2.5.0</version>
+            <version>${json-smart.version}</version>
         </dependency>
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
@@ -420,10 +866,11 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
             <version>1.5.2</version>
         </dependency>
+        <!-- CVE-2025-27817: upgraded from 4.0.0; profiles override with ${kafka-clients.version}=3.9.1 -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>4.0.0</version>
+            <version>${kafka-clients.version}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-minicluster -->
         <dependency>
@@ -726,10 +1173,11 @@
                 </plugins>
             </build>
             <dependencies>
+                <!-- CVE-2025-27817: upgraded from 3.9.0 to 3.9.1 (first safe version) -->
                 <dependency>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
-                    <version>3.9.0</version>
+                    <version>${kafka-clients.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>com.twitter</groupId>
@@ -813,10 +1261,11 @@
                 </dependencies>
             </dependencyManagement>
             <dependencies>
+                <!-- CVE-2025-27817: upgraded from 3.9.0 to 3.9.1 (first safe version) -->
                 <dependency>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
-                    <version>3.9.0</version>
+                    <version>${kafka-clients.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>com.twitter</groupId>
@@ -862,10 +1311,11 @@
                 </plugins>
             </build>
             <dependencies>
+                <!-- CVE-2025-27817: upgraded from 3.9.0 to 3.9.1 (first safe version) -->
                 <dependency>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
-                    <version>3.9.0</version>
+                    <version>${kafka-clients.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>com.twitter</groupId>
