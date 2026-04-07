@@ -42,10 +42,10 @@
         <release-version>0.29</release-version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <encoding>UTF-8</encoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <parquet.version>1.15.2</parquet.version>
+        <parquet.version>1.17.0</parquet.version>
 
         <!-- Whether we will using legazy old consumer kafka-legacy or new consumer kafka-2.0.0 -->
         <!-- Name of the directory below src/main/config that contains kafka-version-specific settings -->
@@ -70,17 +70,17 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
-                <version>2.18.6</version>
+                <version>2.21.2</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.18.6</version>
+                <version>2.21.2</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>2.18.6</version>
+                <version>2.21</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -130,7 +130,7 @@
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-            <version>1.11.4</version>
+            <version>1.12.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.parquet</groupId>
@@ -150,12 +150,12 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.12.468</version>
+            <version>1.12.797</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-sts</artifactId>
-            <version>1.12.468</version>
+            <version>1.12.797</version>
         </dependency>
         <dependency>
             <groupId>net.java.dev.jets3t</groupId>
@@ -165,17 +165,17 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.24.3</version>
+            <version>2.25.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.24.3</version>
+            <version>2.25.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-1.2-api</artifactId>
-            <version>2.24.3</version>
+            <version>2.25.4</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -190,7 +190,7 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.24.3</version>
+            <version>2.25.4</version>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
@@ -201,7 +201,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
-            <version>3.3.6</version>
+            <version>3.5.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -224,17 +224,17 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs-client</artifactId>
-            <version>3.3.6</version>
+            <version>3.5.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>3.3.6</version>
+            <version>3.5.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-aws</artifactId>
-            <version>3.3.6</version>
+            <version>3.5.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>net.java.dev.jets3t</groupId>
@@ -265,7 +265,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-openstack</artifactId>
-            <version>3.3.6</version>
+            <version>3.5.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
@@ -320,7 +320,7 @@
         <dependency>
             <groupId>org.apache.thrift</groupId>
             <artifactId>libthrift</artifactId>
-            <version>0.21.0</version>
+            <version>0.22.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
@@ -340,7 +340,7 @@
         <dependency>
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
-            <version>2.5.0</version>
+            <version>2.6.0</version>
         </dependency>
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
@@ -361,17 +361,17 @@
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito2</artifactId>
-            <version>2.0.7</version>
+            <version>2.0.9</version>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>2.0.7</version>
+            <version>2.0.9</version>
         </dependency>
         <dependency>
             <groupId>org.msgpack</groupId>
             <artifactId>jackson-dataformat-msgpack</artifactId>
-            <version>0.8.20</version>
+            <version>0.9.11</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -392,13 +392,13 @@
         <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>google-cloud-storage</artifactId>
-            <version>2.22.2</version>
+            <version>2.64.1</version>
         </dependency>
 
         <dependency>
             <groupId>com.microsoft.azure</groupId>
             <artifactId>azure-storage</artifactId>
-            <version>8.6.5</version>
+            <version>8.6.6</version>
         </dependency>
         <dependency>
             <groupId>org.apache.orc</groupId>
@@ -408,17 +408,17 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-jmx</artifactId>
-            <version>1.5.2</version>
+            <version>1.16.4</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-statsd</artifactId>
-            <version>1.5.2</version>
+            <version>1.16.4</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
-            <version>1.5.2</version>
+            <version>1.16.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -429,7 +429,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-minicluster</artifactId>
-            <version>3.3.6</version>
+            <version>3.5.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -457,7 +457,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>3.6.3</version>
                 <executions>
                     <execution>
                         <id>create-build-properties</id>
@@ -561,7 +561,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.6.1</version>
                 <executions>
                     <execution>
                         <id>add-test-sources</id>
@@ -622,7 +622,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -634,7 +634,7 @@
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.8</version>
+                <version>1.7.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh</serverId>
@@ -654,7 +654,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <id>copy-kafka-properties</id>
@@ -761,7 +761,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>3.2.1</version>
+                        <version>3.4.0</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -774,7 +774,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.2.0</version>
+                        <version>3.12.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -808,7 +808,7 @@
                     <dependency>
                         <groupId>com.fasterxml.jackson.module</groupId>
                         <artifactId>jackson-module-scala_2.11</artifactId>
-                        <version>2.18.6</version>
+                        <version>2.21.2</version>
                     </dependency>
                 </dependencies>
             </dependencyManagement>
@@ -838,7 +838,7 @@
                     <dependency>
                         <groupId>com.fasterxml.jackson.module</groupId>
                         <artifactId>jackson-module-scala_2.11</artifactId>
-                        <version>2.18.6</version>
+                        <version>2.21.2</version>
                     </dependency>
                 </dependencies>
             </dependencyManagement>
