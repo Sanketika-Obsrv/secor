@@ -37,6 +37,8 @@ import org.mockito.Mockito;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.mockito.Mockito.when;
 
@@ -63,8 +65,12 @@ public class SecorSchemaRegistryClientTest extends TestCase {
 
     private void initKafka() {
         schemaRegistryClient = new MockSchemaRegistryClient();
-        kafkaAvroDeserializer = new KafkaAvroDeserializer(schemaRegistryClient);
-        avroSerializer = new KafkaAvroSerializer(schemaRegistryClient);
+        // Confluent 5.x requires configure() to be called so that autoRegisterSchema
+        // defaults to true (it stays false as a Java boolean default otherwise).
+        Map<String, Object> serdeConfig = new HashMap<>();
+        serdeConfig.put("schema.registry.url", "mock://test");
+        kafkaAvroDeserializer = new KafkaAvroDeserializer(schemaRegistryClient, serdeConfig);
+        avroSerializer = new KafkaAvroSerializer(schemaRegistryClient, serdeConfig);
     }
 
     @Test
