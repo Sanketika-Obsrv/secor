@@ -712,14 +712,6 @@
             <artifactId>hadoop-openstack</artifactId>
             <version>3.3.6</version>
         </dependency>
-        <!-- CVE-2024-23454: Manage hadoop-client-api version for ORC compatibility -->
-        <!-- orc-shims:1.8.7 pulls 3.3.5; we manage it to 3.3.6 to match other Hadoop deps -->
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client-api</artifactId>
-            <version>3.3.6</version>
-        </dependency>
-
         <!-- Parquet file format dependencies -->
         <dependency>
             <groupId>org.apache.parquet</groupId>
@@ -852,8 +844,10 @@
             <artifactId>orc-core</artifactId>
             <version>1.8.7</version>
             <exclusions>
-                <!-- CVE-2024-23454: orc-shims pulls hadoop-client-api:3.3.5 which conflicts with 3.3.6 -->
-                <!-- Exclude to use the version managed in dependencyManagement (3.3.6) -->
+                <!-- Exclude hadoop-client-api: its Configuration class uses shaded Woodstox
+                     (org.apache.hadoop.shaded.com.ctc.wstx.*) which is absent without
+                     hadoop-client-runtime, causing NoClassDefFoundError at startup.
+                     hadoop-common already provides Configuration using unshaded Woodstox. -->
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
                     <artifactId>hadoop-client-api</artifactId>
