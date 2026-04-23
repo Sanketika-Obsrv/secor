@@ -3,7 +3,7 @@ package com.pinterest.secor.monitoring;
 import com.pinterest.secor.common.SecorConfig;
 import com.pinterest.secor.common.monitoring.PrometheusHandler;
 import com.sun.net.httpserver.HttpExchange;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.junit.Test;
 
 import java.io.IOException;

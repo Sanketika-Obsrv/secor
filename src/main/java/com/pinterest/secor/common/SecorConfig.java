@@ -19,13 +19,17 @@
 package com.pinterest.secor.common;
 
 import com.google.common.base.Strings;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.ConfigurationUtils;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.ConfigurationUtils;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -40,16 +44,21 @@ import java.util.TimeZone;
 public class SecorConfig {
     private static final Logger LOG = LoggerFactory.getLogger(SecorConfig.class);
 
-    private final PropertiesConfiguration mProperties;
+    private final Configuration mProperties;
 
     private static final ThreadLocal<SecorConfig> mSecorConfig = ThreadLocal.withInitial(() -> {
         // Load the default configuration file first
         Properties systemProperties = System.getProperties();
         String configProperty = systemProperties.getProperty("config");
 
-        PropertiesConfiguration properties;
+        Configuration properties;
         try {
-            properties = new PropertiesConfiguration(configProperty);
+            Parameters params = new Parameters();
+            FileBasedConfigurationBuilder<PropertiesConfiguration> builder =
+                    new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
+                            .configure(params.properties()
+                                    .setFile(new File(configProperty)));
+            properties = builder.getConfiguration();
         } catch (ConfigurationException e) {
             throw new RuntimeException("Error loading configuration from " + configProperty, e);
         }
@@ -73,7 +82,7 @@ public class SecorConfig {
      *
      * @param properties properties config
      */
-    public SecorConfig(PropertiesConfiguration properties) {
+    public SecorConfig(Configuration properties) {
         mProperties = properties;
     }
 

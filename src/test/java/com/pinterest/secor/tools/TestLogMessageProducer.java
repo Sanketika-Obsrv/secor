@@ -28,6 +28,7 @@ import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
+import org.apache.thrift.transport.TTransportException;
 
 import com.pinterest.secor.thrift.TestMessage;
 import com.pinterest.secor.thrift.TestEnum;

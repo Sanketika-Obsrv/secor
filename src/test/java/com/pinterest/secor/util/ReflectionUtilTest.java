@@ -23,7 +23,7 @@ import com.pinterest.secor.common.SecorConfig;
 import com.pinterest.secor.monitoring.MetricCollector;
 import com.pinterest.secor.monitoring.OstrichMetricCollector;
 import com.pinterest.secor.parser.MessageParser;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Before;

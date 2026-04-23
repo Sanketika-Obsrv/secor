@@ -130,7 +130,7 @@ stop_s3() {
 }
 
 start_zookeeper() {
-    if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+    if [[ "$MVN_PROFILE" == kafka-4.0.0 ]];then
       run_command "docker-compose up -d zookeeper"
     else
       run_command "${BASE_DIR}/run_kafka_class.sh \
@@ -140,7 +140,7 @@ start_zookeeper() {
 }
 
 stop_zookeeper() {
-    if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+    if [[ "$MVN_PROFILE" == kafka-4.0.0 ]];then
       run_command "docker-compose rm -sf zookeeper"
     else
       run_command "pkill -f 'org.apache.zookeeper.server.quorum.QuorumPeerMain' || true"
@@ -148,7 +148,7 @@ stop_zookeeper() {
 }
 
 start_kafka_server () {
-    if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+    if [[ "$MVN_PROFILE" == kafka-4.0.0 ]];then
       run_command "docker-compose up -d kafka"
     else
       run_command "${BASE_DIR}/run_kafka_class.sh kafka.Kafka ${CONF_DIR}/kafka.test.properties > \
@@ -157,7 +157,7 @@ start_kafka_server () {
 }
 
 stop_kafka_server() {
-    if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+    if [[ "$MVN_PROFILE" == kafka-4.0.0 ]];then
       run_command "docker-compose rm -sf kafka"
     else
       run_command "pkill -f 'kafka.Kafka' || true"
@@ -199,7 +199,7 @@ run_finalizer() {
 }
 
 create_topic() {
-    if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+    if [[ "$MVN_PROFILE" == kafka-4.0.0 ]];then
       run_command "docker-compose exec kafka kafka-topics --zookeeper zookeeper:2181 --create --replication-factor 1 --partitions 2 --topic test"
     else
       run_command "${BASE_DIR}/run_kafka_class.sh kafka.admin.TopicCommand --create --zookeeper \
@@ -492,7 +492,7 @@ for fkey in ${S3_FILESYSTEMS}; do
     for key in ${!READER_WRITERS[@]}; do
         MESSAGE_TYPE=${key}
         ADDITIONAL_OPTS="-Dsecor.s3.filesystem=${FILESYSTEM_TYPE} -Dsecor.file.reader.writer.factory=${READER_WRITERS[${key}]}"
-        if [[ "$MVN_PROFILE" == kafka-2.0.0 ]];then
+        if [[ "$MVN_PROFILE" == kafka-4.0.0 ]];then
           echo "Detected kafka 2.0 profile, setting new classes config"
           ADDITIONAL_OPTS="${ADDITIONAL_OPTS} -Dkafka.message.iterator.className=com.pinterest.secor.reader.SecorKafkaMessageIterator"
           ADDITIONAL_OPTS="${ADDITIONAL_OPTS} -Dkafka.client.className=com.pinterest.secor.common.SecorKafkaClient"

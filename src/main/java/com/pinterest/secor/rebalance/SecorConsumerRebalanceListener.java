@@ -3,6 +3,7 @@ package com.pinterest.secor.rebalance;
 import com.pinterest.secor.util.StatsUtil;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,8 +11,10 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class SecorConsumerRebalanceListener implements ConsumerRebalanceListener {
@@ -62,14 +65,16 @@ public class SecorConsumerRebalanceListener implements ConsumerRebalanceListener
 
     private Map<TopicPartition, Long> getCommittedOffsets(Collection<TopicPartition> assignment) {
         Map<TopicPartition, Long> committedOffsets = new HashMap<>();
-        for (TopicPartition topicPartition : assignment) {
-            try {
-                long committedOffset = mKafkaConsumer.committed(topicPartition) != null ? mKafkaConsumer.committed(topicPartition).offset() : -1;
-                committedOffsets.put(topicPartition, committedOffset);
-            } catch (Exception e) {
-                LOG.trace("Unable to fetch committed offsets from kafka", e);
-                throw new RuntimeException(e);
+        try {
+            Set<TopicPartition> set = new HashSet<>(assignment);
+            Map<TopicPartition, OffsetAndMetadata> results = mKafkaConsumer.committed(set);
+            for (TopicPartition topicPartition : assignment) {
+                OffsetAndMetadata om = results.get(topicPartition);
+                committedOffsets.put(topicPartition, om != null ? om.offset() : -1L);
             }
+        } catch (Exception e) {
+            LOG.trace("Unable to fetch committed offsets from kafka", e);
+            throw new RuntimeException(e);
         }
         return committedOffsets;
     }
