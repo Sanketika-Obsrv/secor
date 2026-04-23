@@ -606,7 +606,7 @@ public class SecorConfig {
 
     public String getAzureAccountName() { return getString("secor.azure.account.name"); }
 
-    public String getAzureAccountKey() { return getString("secor.azure.account.key"); }
+    public String getAzureAccountKey() { return getString("secor.azure.account.key", ""); }
 
     public String getAzureContainer() { return getString("secor.azure.container.name"); }
 

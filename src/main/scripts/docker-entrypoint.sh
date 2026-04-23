@@ -128,7 +128,7 @@ cd /opt/secor
 DEFAULT_CLASSPATH="*:lib/*"
 CLASSPATH=${CLASSPATH:-$DEFAULT_CLASSPATH}
 
-# exec java -Xmx${JVM_MEMORY:-512m} $JAVA_OPTS -ea -Dsecor_group=${SECOR_GROUP:-partition} -Dlog4j.configuration=file:${LOG4J_CONFIGURATION:-log4j.docker.properties} \
+# exec java -Xmx${JVM_MEMORY:-512m} $JAVA_OPTS -ea -Dsecor_group=${SECOR_GROUP:-partition} -Dlog4j.configurationFile=file:${LOG4J_CONFIGURATION:-log4j2.docker.properties} \
 #        -Dconfig=${CONFIG_FILE:-secor.prod.partition.properties} $SECOR_CONFIG \
 #        -cp $CLASSPATH ${SECOR_MAIN_CLASS:-com.pinterest.secor.main.ConsumerMain}
 exec java -ea -Dsecor_group=${SECOR_GROUP:-partition} -Dconfig=${CONFIG_FILE:-secor.partition.properties} -Duser.timezone=${TIMEZONE} \

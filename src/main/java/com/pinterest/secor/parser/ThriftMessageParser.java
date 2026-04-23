@@ -61,7 +61,7 @@ public class ThriftMessageParser extends TimestampedMessageParser {
 
     public ThriftMessageParser(SecorConfig config)
             throws InstantiationException, IllegalAccessException,
-            ClassNotFoundException {
+            ClassNotFoundException, TTransportException {
         super(config);
         TProtocolFactory protocolFactory = null;
         String protocolName = mConfig.getThriftProtocolClass();

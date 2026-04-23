@@ -2,8 +2,8 @@
 
 # Which java to use
 if [ -z "${JAVA_HOME}" ]; then
-    # try to use Java7 by default
-    JAVA_HOME=/usr/lib/jvm/java-7-oracle
+    # try to use Java11 by default
+    JAVA_HOME=/usr/lib/jvm/java-11
     if [ -e $JAVA_HOME ]; then
         JAVA=${JAVA_HOME}/bin/java
     else

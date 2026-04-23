@@ -170,11 +170,11 @@ start_secor() {
       ADDITIONAL_OPTS="${ADDITIONAL_OPTS} -Dkafka.message.timestamp.className=com.pinterest.secor.timestamp.Kafka8MessageTimestamp"
     fi
 
-    run_command "${JAVA} -server -ea -Dlog4j.configuration=log4j.dev.properties \
+    run_command "${JAVA} -server -ea -Dlog4j.configurationFile=log4j2.dev.properties \
         -Dconfig=secor.test.backup.properties ${ADDITIONAL_OPTS} -cp $CLASSPATH \
         com.pinterest.secor.main.ConsumerMain > ${LOGS_DIR}/secor_backup.log 2>&1 &"
     if [ "${MESSAGE_TYPE}" = "binary" ]; then
-       run_command "${JAVA} -server -ea -Dlog4j.configuration=log4j.dev.properties \
+       run_command "${JAVA} -server -ea -Dlog4j.configurationFile=log4j2.dev.properties \
            -Dconfig=secor.test.partition.properties ${ADDITIONAL_OPTS} -cp $CLASSPATH \
            com.pinterest.secor.main.ConsumerMain > ${LOGS_DIR}/secor_partition.log 2>&1 &"
     fi
@@ -185,7 +185,7 @@ stop_secor() {
 }
 
 run_finalizer() {
-    run_command "${JAVA} -server -ea -Dlog4j.configuration=log4j.dev.properties \
+    run_command "${JAVA} -server -ea -Dlog4j.configurationFile=log4j2.dev.properties \
         -Dconfig=secor.test.partition.properties ${ADDITIONAL_OPTS} -cp $CLASSPATH \
         com.pinterest.secor.main.PartitionFinalizerMain > ${LOGS_DIR}/finalizer.log 2>&1 "
 
@@ -212,7 +212,7 @@ create_topic() {
 # $1 number of messages
 # $2 timeshift in seconds
 post_messages() {
-    run_command "${JAVA} -server -ea -Dlog4j.configuration=log4j.dev.properties \
+    run_command "${JAVA} -server -ea -Dlog4j.configurationFile=log4j2.dev.properties \
         -Dconfig=secor.test.backup.properties -cp ${CLASSPATH} \
         com.pinterest.secor.main.TestLogMessageProducerMain -t test -m $1 -p 1 -type ${MESSAGE_TYPE} -timeshift $2 > \
         ${LOGS_DIR}/test_log_message_producer.log 2>&1"
@@ -231,7 +231,7 @@ verify() {
        RUNMODE_1="backup"
     fi
     for RUNMODE in ${RUNMODE_0} ${RUNMODE_1}; do
-      run_command "${JAVA} -server -ea -Dlog4j.configuration=log4j.dev.properties \
+      run_command "${JAVA} -server -ea -Dlog4j.configurationFile=log4j2.dev.properties \
           -Dconfig=secor.test.${RUNMODE}.properties ${ADDITIONAL_OPTS} -cp ${CLASSPATH} \
           com.pinterest.secor.main.LogFileVerifierMain -t test -m $1 -q > \
           ${LOGS_DIR}/log_verifier_${RUNMODE}.log 2>&1"

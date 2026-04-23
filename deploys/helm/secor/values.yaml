@@ -10,9 +10,9 @@ secor:
     path: "/"
   backup:
     configFile: /opt/secor/config/secor.kubernetes-dev.backup.properties
-    logConfigFile: /opt/secor/config/log4j.docker.properties
+    logConfigFile: /opt/secor/config/log4j2.docker.properties
     monitor:
-      logConfigFile: /opt/secor/config/log4j.docker-warn.properties
+      logConfigFile: /opt/secor/config/log4j2.docker-warn.properties
     storage:
       class: standard
       size: 20Gi
@@ -24,9 +24,9 @@ secor:
         memory: 768Mi
   partition:
     configFile: /opt/secor/config/secor.kubernetes-dev.partition.properties
-    logConfigFile: /opt/secor/config/log4j.docker.properties
+    logConfigFile: /opt/secor/config/log4j2.docker.properties
     monitor:
-      logConfigFile: /opt/secor/config/log4j.docker-warn.properties
+      logConfigFile: /opt/secor/config/log4j2.docker-warn.properties
     storage:
       class: standard
       size: 20Gi

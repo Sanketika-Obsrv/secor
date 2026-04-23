@@ -4,7 +4,7 @@ secor:
     quorum: "kafka-zookeeper:2181"
   backup:
     configFile: /opt/secor/config/secor.kubernetes-prod.backup.properties
-    logConfigFile: /opt/secor/config/log4j.kubernetes-prod.properties
+    logConfigFile: /opt/secor/config/log4j2.kubernetes-prod.properties
     storage:
       class: standard
       size: 100Gi
@@ -18,7 +18,7 @@ secor:
  
   partition:
     configFile: /opt/secor/config/secor.kubernetes-prod.partition.properties
-    logConfigFile: /opt/secor/config/log4j.kubernetes-prod.properties
+    logConfigFile: /opt/secor/config/log4j2.kubernetes-prod.properties
     storage:
       class: standard
       size: 100Gi

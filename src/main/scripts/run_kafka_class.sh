@@ -28,7 +28,7 @@ fi
 KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false "
 
 # Log4j settings
-KAFKA_LOG4J_OPTS="-Dlog4j.configuration=log4j.properties"
+KAFKA_LOG4J_OPTS="-Dlog4j.configurationFile=log4j2.properties"
 
 # Generic jvm settings you want to add
 KAFKA_OPTS=""
