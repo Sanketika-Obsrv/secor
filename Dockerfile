@@ -1,9 +1,11 @@
 # FROM --platform=linux/amd64,linux/arm64 eclipse-temurin:11.0.20.1_1-jdk-focal
 ARG TARGETPLATFORM
-FROM eclipse-temurin:11.0.20.1_1-jdk-focal as base
-# https://github.com/docker-library/openjdk/issues/145#issuecomment-334561903
-# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=894979
-RUN rm /etc/ssl/certs/java/cacerts ; update-ca-certificates -f
+# Docker Hardened Image (near-zero-CVE). JRE (not JDK) is enough at runtime; the
+# -dev variant retains the shell needed by docker-entrypoint.sh and the build steps.
+FROM dhi.io/eclipse-temurin:11-jre-dev as base
+# DHI images default to a non-root user; the build needs root to create the secor
+# user and set ownership (the upstream temurin image ran as root).
+USER root
 
 RUN mkdir -p /opt/secor
 
@@ -11,8 +13,10 @@ RUN mkdir -p /opt/secor
 ENV SECOR_HOME=/opt/secor
 WORKDIR $SECOR_HOME
 
-RUN groupadd --system --gid=9999 secor && \
-    useradd --system --home-dir $SECOR_HOME --uid=9999 --gid=secor secor
+# The hardened base has no shadow utils (groupadd/useradd); create the system
+# user directly in /etc/passwd + /etc/group.
+RUN echo 'secor:x:9999:' >> /etc/group && \
+    echo 'secor:x:9999:9999::/opt/secor:/usr/sbin/nologin' >> /etc/passwd
 
 ADD target/secor-*-bin.tar.gz $SECOR_HOME
 
