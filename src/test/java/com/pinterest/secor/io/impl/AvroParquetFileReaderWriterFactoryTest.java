@@ -60,7 +60,7 @@ import static org.mockito.Mockito.when;
     "javax.xml.stream.*",
     "javax.security.auth.login.*",
     "javax.security.auth.spi.*",
-    "org.apache.hadoop.security.*",
+    "org.apache.hadoop.*",
     "org.codehaus.stax2.*",
     "org.w3c.",
     "org.xml.",
