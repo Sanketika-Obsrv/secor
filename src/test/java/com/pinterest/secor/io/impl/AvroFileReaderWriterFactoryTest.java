@@ -43,6 +43,16 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
+// Defer hadoop (+ xml/security infra) to the app classloader. Under hadoop 3.3.x,
+// SecurityUtil's static init touches org.apache.hadoop.net.*; if PowerMock's mock
+// classloader loads a second copy, its init throws (DNSDomainNameResolver !=
+// DomainNameResolver) and poisons every later file-format test with NoClassDefFound.
+@org.powermock.core.classloader.annotations.PowerMockIgnore({
+    "org.apache.hadoop.*",
+    "javax.*",
+    "com.sun.*",
+    "org.w3c.*",
+    "org.xml.*"})
 public class AvroFileReaderWriterFactoryTest extends TestCase {
 
     private AvroFileReaderWriterFactory mFactory;
