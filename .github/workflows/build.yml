@@ -46,25 +46,25 @@ jobs:
     - name: Set Docker image name
       if: success()
       run: |
-        echo "DOCKER_IMAGE_NAME=$(echo ghcr.io/${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-        echo "DOCKER_IMAGE_TAG=$(echo "${{ github.ref_name }}_$(echo $GITHUB_SHA | cut -c1-7)" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')" >> $GITHUB_ENV
+        echo "DOCKER_IMAGE_NAME=$(echo ${{ vars.DOCKERHUB_USERNAME }}/secor | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        echo "DOCKER_IMAGE_TAG=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')" >> $GITHUB_ENV
 
-    - name: Log in to GitHub Container Registry
+    # Push target: Docker Hub sanketikahub/secor (plain docker.io login).
+    - name: Log in to Docker Hub (push target)
       if: success()
       uses: docker/login-action@v3
       with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # DHI base (FROM dhi.io/eclipse-temurin:11-jdk-debian13-dev) is served via the
-    # sanketikahub Docker Hub entitlement — the build must be logged into Docker Hub
-    # to PULL it, else: Head "https://dhi.io/...": unauthorized. (Push still goes to ghcr.)
-    - name: Log in to Docker Hub (for dhi.io base image)
+    # DHI base pull: dhi.io needs the sanketikahub DHI-entitled Docker Hub creds. registry: dhi.io
+    # is required — the spotify docker plugin won't map a plain docker.io login to a dhi.io pull.
+    - name: Log in to DHI registry (dhi.io) for the base image
       if: success()
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        registry: dhi.io
+        username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: Build Docker Image
