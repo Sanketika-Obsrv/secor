@@ -45,9 +45,11 @@ jobs:
       
     - name: Set Docker image name
       if: success()
+      env:
+        REF_NAME: ${{ github.ref_name }}
       run: |
         echo "DOCKER_IMAGE_NAME=$(echo ${{ vars.DOCKERHUB_USERNAME }}/secor | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-        echo "DOCKER_IMAGE_TAG=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')" >> $GITHUB_ENV
+        echo "DOCKER_IMAGE_TAG=$(echo "$REF_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')" >> $GITHUB_ENV
 
     # Push target: Docker Hub sanketikahub/secor (plain docker.io login).
     - name: Log in to Docker Hub (push target)
