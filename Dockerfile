@@ -9,10 +9,12 @@ WORKDIR ${SECOR_HOME}
 USER 0
 # DHI base has no useradd/groupadd — create the secor 9999 uid/gid directly
 RUN printf 'secor:x:9999:9999:secor:/opt/secor:/bin/bash\n' >> /etc/passwd \
- && printf 'secor:x:9999:\n' >> /etc/group \
- && mkdir -p "$SECOR_HOME"
+ && printf 'secor:x:9999:\n' >> /etc/group
 
-# secor distribution: maven-built tarball (target/secor-*-bin.tar.gz), same source as upstream
+# secor distribution: maven-built tarball (target/secor-*-bin.tar.gz), same source as upstream.
+# NOTE: ADD --chown does not reliably rewrite ownership of auto-extracted tar contents here
+# (verified: extracted files keep the UID/GID baked into the tarball by the host that built it)
+# -- the explicit chown -R below is NOT redundant, despite --chown already being on the ADD/COPY.
 ADD --chown=9999:9999 target/secor-*-bin.tar.gz ${SECOR_HOME}/
 COPY --chown=9999:9999 src/main/scripts/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh && chown -R 9999:9999 "$SECOR_HOME" /docker-entrypoint.sh
