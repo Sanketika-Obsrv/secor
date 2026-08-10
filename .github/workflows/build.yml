@@ -76,17 +76,17 @@ jobs:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # Builds AND pushes (dockerfile-maven-plugin's build-docker-image profile binds both
-    # goals together), so the exact tag + :latest are live on Docker Hub after this step.
-    - name: Build and Push Docker Image
+    # Build only -- the Maven plugin's `push` goal binds to the `deploy` phase, which `mvn
+    # install` never reaches, so it would silently no-op if declared here (confirmed against
+    # the plugin's own descriptor). The explicit `docker push` step below is the real publish
+    # path -- only the exact version tag is published, no :latest.
+    - name: Build Docker Image
       if: success() && github.event_name == 'push' && github.ref_type == 'tag'
       run: mvn clean install -DskipTests -Pbuild-docker-image -Ddockerfile.repository=${{ env.DOCKER_IMAGE_NAME }} -Ddockerfile.tag=${{ env.DOCKER_IMAGE_TAG }} --file pom.xml
 
-    - name: Tag and push :latest
+    - name: Push Docker Image
       if: success() && github.event_name == 'push' && github.ref_type == 'tag'
-      run: |
-        docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} ${{ env.DOCKER_IMAGE_NAME }}:latest
-        docker push ${{ env.DOCKER_IMAGE_NAME }}:latest
+      run: docker push ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4

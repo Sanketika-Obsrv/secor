@@ -715,11 +715,15 @@
                         <artifactId>dockerfile-maven-plugin</artifactId>
                         <version>1.4.13</version>
                         <executions>
+                            <!-- build only. push's default phase is `deploy`, but the workflow
+                                 runs `mvn clean install` (never reaches deploy), so a declared
+                                 push goal here silently never executes -- confirmed against the
+                                 plugin's own descriptor. The workflow's explicit `docker push`
+                                 step (after this build) is the real publish path. -->
                             <execution>
                                 <id>default</id>
                                 <goals>
                                     <goal>build</goal>
-                                    <goal>push</goal>
                                 </goals>
                             </execution>
                         </executions>
