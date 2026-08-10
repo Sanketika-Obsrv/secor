@@ -1,25 +1,23 @@
-# FROM --platform=linux/amd64,linux/arm64 eclipse-temurin:11.0.20.1_1-jdk-focal
-ARG TARGETPLATFORM
-FROM eclipse-temurin:11.0.20.1_1-jdk-focal as base
-# https://github.com/docker-library/openjdk/issues/145#issuecomment-334561903
-# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=894979
-RUN rm /etc/ssl/certs/java/cacerts ; update-ca-certificates -f
+# DHI-hardened Secor (Pinterest Secor, built from https://github.com/Sanketika-Obsrv/secor).
+ARG BASE_IMAGE=dhi.io/eclipse-temurin:11-jdk-debian13-dev
 
-RUN mkdir -p /opt/secor
+FROM ${BASE_IMAGE}
 
-# Prepare environment
 ENV SECOR_HOME=/opt/secor
-WORKDIR $SECOR_HOME
+WORKDIR ${SECOR_HOME}
 
-RUN groupadd --system --gid=9999 secor && \
-    useradd --system --home-dir $SECOR_HOME --uid=9999 --gid=secor secor
+USER 0
+# DHI base has no useradd/groupadd — create the secor 9999 uid/gid directly
+RUN printf 'secor:x:9999:9999:secor:/opt/secor:/bin/bash\n' >> /etc/passwd \
+ && printf 'secor:x:9999:\n' >> /etc/group
 
-ADD target/secor-*-bin.tar.gz $SECOR_HOME
+# secor distribution: maven-built tarball (target/secor-*-bin.tar.gz), same source as upstream.
+# NOTE: ADD --chown does not reliably rewrite ownership of auto-extracted tar contents here
+# (verified: extracted files keep the UID/GID baked into the tarball by the host that built it)
+# -- the explicit chown -R below is NOT redundant, despite --chown already being on the ADD/COPY.
+ADD --chown=9999:9999 target/secor-*-bin.tar.gz ${SECOR_HOME}/
+COPY --chown=9999:9999 src/main/scripts/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh && chown -R 9999:9999 "$SECOR_HOME" /docker-entrypoint.sh
 
-COPY src/main/scripts/docker-entrypoint.sh /docker-entrypoint.sh
-RUN find $SECOR_HOME -type d -exec chown -R secor:secor {} \;
-RUN chown secor:secor /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
-
-USER secor
+USER 9999:9999
 ENTRYPOINT ["/docker-entrypoint.sh"]

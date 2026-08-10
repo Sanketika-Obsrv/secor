@@ -16,8 +16,7 @@ jobs:
     
     permissions:
       contents: read
-      packages: write
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -39,38 +38,56 @@ jobs:
     - name: Build and Test with Maven
       run: mvn -B clean install --file pom.xml
       
+    # Everything below only runs when a version tag is pushed (e.g. `git tag 2.2.0 && git push
+    # --tags`) -- branch pushes (main/master/develop) and PRs only run the Maven build/test
+    # above and stop there. No image is built or published outside of a tag creation.
     - name: Set up Docker Buildx
-      if: success()
+      if: success() && github.event_name == 'push' && github.ref_type == 'tag'
       uses: docker/setup-buildx-action@v3
-      
+
     - name: Set Docker image name
-      if: success()
+      if: success() && github.event_name == 'push' && github.ref_type == 'tag'
+      env:
+        REF_NAME: ${{ github.ref_name }}
+        DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
       run: |
-        echo "DOCKER_IMAGE_NAME=$(echo ghcr.io/${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-        echo "DOCKER_IMAGE_TAG=$(echo "${{ github.ref_name }}_$(echo $GITHUB_SHA | cut -c1-7)" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')" >> $GITHUB_ENV
-    
-    - name: Log in to GitHub Container Registry
-      if: success()
+        echo "DOCKER_IMAGE_NAME=$(echo ${{ vars.DOCKERHUB_USERNAME }}/secor | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        # Version tags (e.g. 2.2.0) must stay exact -- helmcharts/images.yaml pins this literal tag.
+        echo "DOCKER_IMAGE_TAG=$(echo "$REF_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')" >> $GITHUB_ENV
+
+    # Push target: Docker Hub sanketikahub/secor (plain docker.io login).
+    # Docker steps below are skipped on pull_request: this workflow's pull_request trigger has
+    # no fork/approval gate, so any PR build would otherwise publish straight to the production
+    # sanketikahub/secor repo, including :latest.
+    - name: Log in to Docker Hub (push target)
+      if: success() && github.event_name == 'push' && github.ref_type == 'tag'
       uses: docker/login-action@v3
       with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    # DHI base pull: dhi.io needs the sanketikahub DHI-entitled Docker Hub creds. registry: dhi.io
+    # is required — the spotify docker plugin won't map a plain docker.io login to a dhi.io pull.
+    - name: Log in to DHI registry (dhi.io) for the base image
+      if: success() && github.event_name == 'push' && github.ref_type == 'tag'
+      uses: docker/login-action@v3
+      with:
+        registry: dhi.io
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    # Build only -- the Maven plugin's `push` goal binds to the `deploy` phase, which `mvn
+    # install` never reaches, so it would silently no-op if declared here (confirmed against
+    # the plugin's own descriptor). The explicit `docker push` step below is the real publish
+    # path -- only the exact version tag is published, no :latest.
     - name: Build Docker Image
-      if: success()
+      if: success() && github.event_name == 'push' && github.ref_type == 'tag'
       run: mvn clean install -DskipTests -Pbuild-docker-image -Ddockerfile.repository=${{ env.DOCKER_IMAGE_NAME }} -Ddockerfile.tag=${{ env.DOCKER_IMAGE_TAG }} --file pom.xml
-      
-    - name: Tag Docker Image
-      if: success()
-      run: docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} ${{ env.DOCKER_IMAGE_NAME }}:latest
-      
+
     - name: Push Docker Image
-      if: success()
-      run: |
-        docker push ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
-        docker push ${{ env.DOCKER_IMAGE_NAME }}:latest
-      
+      if: success() && github.event_name == 'push' && github.ref_type == 'tag'
+      run: docker push ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       if: success()
