@@ -76,19 +76,16 @@ jobs:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build Docker Image
+    # Builds AND pushes (dockerfile-maven-plugin's build-docker-image profile binds both
+    # goals together), so the exact tag + :latest are live on Docker Hub after this step.
+    - name: Build and Push Docker Image
       if: success() && github.event_name == 'push' && github.ref_type == 'tag'
       run: mvn clean install -DskipTests -Pbuild-docker-image -Ddockerfile.repository=${{ env.DOCKER_IMAGE_NAME }} -Ddockerfile.tag=${{ env.DOCKER_IMAGE_TAG }} --file pom.xml
-      
-    - name: Smoke test Docker Image
-      if: success() && github.event_name == 'push' && github.ref_type == 'tag'
-      run: docker run --rm --entrypoint java ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} -version
 
-    - name: Push Docker Image
+    - name: Tag and push :latest
       if: success() && github.event_name == 'push' && github.ref_type == 'tag'
       run: |
         docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} ${{ env.DOCKER_IMAGE_NAME }}:latest
-        docker push ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
         docker push ${{ env.DOCKER_IMAGE_NAME }}:latest
 
     - name: Upload build artifacts
