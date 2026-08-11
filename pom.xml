@@ -665,6 +665,17 @@
             <artifactId>parquet-thrift</artifactId>
             <version>${parquet.version}</version>
             <exclusions>
+                <!-- parquet-thrift pulls parquet-pig, and pins it at 1.15.0 rather than tracking
+                     ${parquet.version}. Every other parquet artifact converges on 1.17.1, so
+                     parquet-pig is left running against a column/hadoop/common pair two minor
+                     versions ahead of what it was built for - the same split-train shape as the
+                     io.grpc problem fixed in e31c40f. Nothing under src/ imports org.apache.pig,
+                     so the Pig bindings are dead weight and dropping them removes the skew
+                     outright rather than papering over it with a version pin. -->
+                <exclusion>
+                    <groupId>org.apache.parquet</groupId>
+                    <artifactId>parquet-pig</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>com.hadoop.gplcompression</groupId>
                     <artifactId>hadoop-lzo</artifactId>
@@ -763,6 +774,21 @@
             <groupId>org.apache.orc</groupId>
             <artifactId>orc-core</artifactId>
             <version>1.8.7</version>
+            <exclusions>
+                <!-- orc-shims pulls hadoop-client-api, a shaded uber-jar that carries ~8900
+                     org.apache.hadoop.* classes in their ORIGINAL packages - including
+                     conf.Configuration and the whole fs package, which src/main uses directly.
+                     Those duplicate the real hadoop jars, so classpath order decides which
+                     Configuration/FileSystem loads. It was pinned at 3.3.5 while our hadoop
+                     artifacts were 3.3.6, which was survivable; against 3.4.3 it is a
+                     minor-version skew and a NoSuchMethodError waiting to happen. ORC resolves
+                     these classes from hadoop-common/hadoop-hdfs-client instead, which are
+                     already compile-scope here. -->
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-client-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
