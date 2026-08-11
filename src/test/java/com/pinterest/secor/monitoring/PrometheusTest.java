@@ -35,7 +35,10 @@ public class PrometheusTest {
         collector.gauge("test", 1, "topic");
 
         handler.handle(exchange);
-        assertTrue(responses.get(0).contains("test{topic=\"topic\",} 1.0"));
+        // The Prometheus Java client 1.x exposition format (used by micrometer-registry-prometheus
+        // 1.13+) no longer emits a trailing comma after the last label, unlike the older simpleclient
+        // 0.x format which produced test{topic="topic",} 1.0
+        assertTrue(responses.get(0).contains("test{topic=\"topic\"} 1.0"));
     }
 
 }

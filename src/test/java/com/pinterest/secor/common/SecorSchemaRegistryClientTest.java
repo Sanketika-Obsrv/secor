@@ -23,6 +23,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import junit.framework.TestCase;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
@@ -37,6 +38,8 @@ import org.mockito.Mockito;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.mockito.Mockito.when;
 
@@ -64,7 +67,14 @@ public class SecorSchemaRegistryClientTest extends TestCase {
     private void initKafka() {
         schemaRegistryClient = new MockSchemaRegistryClient();
         kafkaAvroDeserializer = new KafkaAvroDeserializer(schemaRegistryClient);
-        avroSerializer = new KafkaAvroSerializer(schemaRegistryClient);
+        // kafka-avro-serializer no longer auto-registers schemas by default (unlike 2.0.1, where
+        // serializeImpl unconditionally registered); this test relies on auto-registration to seed
+        // the mock registry, so it must be enabled explicitly. Passing any config map also triggers
+        // configure(), which requires schema.registry.url even though schemaRegistryClient is already set.
+        Map<String, Object> serializerConfig = new HashMap<>();
+        serializerConfig.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "mock://test");
+        serializerConfig.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, true);
+        avroSerializer = new KafkaAvroSerializer(schemaRegistryClient, serializerConfig);
     }
 
     @Test
