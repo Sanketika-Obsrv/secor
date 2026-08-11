@@ -45,9 +45,11 @@
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <encoding>UTF-8</encoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!-- 1.16.0: parquet-jackson bundles a shaded Jackson; 1.15.2 shaded 2.18.1 (vulnerable),
-             1.16.0 shades 2.19.2. Still Java 8 bytecode, so Java 11 safe (1.17.x targets Java 11). -->
-        <parquet.version>1.16.0</parquet.version>
+        <!-- parquet-jackson bundles a shaded Jackson that Trivy scans but dependencyManagement
+             cannot reach, so the only lever on it is the parquet version itself: 1.15.2 shaded
+             2.18.1, 1.16.0 shaded 2.19.2 (7 findings), 1.17.1 shades 2.21.3. 1.17.x emits Java 11
+             bytecode, which is fine - this project already targets 11 (see maven.compiler.* above). -->
+        <parquet.version>1.17.1</parquet.version>
         <!-- 1.15.x is the latest line whose registry jars no longer shade guava/jackson/netty-codec-http
              (that shading was the source of 43 CVEs in micrometer-registry-statsd-1.5.2). Java 8 bytecode,
              so Java 11 safe. Do not go past 1.15.x without re-checking the JDK baseline. -->
@@ -126,13 +128,6 @@
                 <artifactId>zookeeper</artifactId>
                 <version>3.9.5</version>
             </dependency>
-
-            <!-- NOTE: software.amazon.ion:ion-java 1.0.2 (via aws-java-sdk-core) carries
-                 CVE-2024-21634, and it is a residual risk. The fix landed in 1.10.5, but only under
-                 the newer com.amazon.ion groupId - the software.amazon.ion coordinates stop at 1.5.1,
-                 all vulnerable. The two are NOT interchangeable: the old artifact's classes live in
-                 the software.amazon.ion package, so the com.amazon.ion entry managed further down
-                 cannot satisfy aws-java-sdk-core's references. Clearing this needs AWS SDK v1 -> v2. -->
 
             <!-- kafka-clients 4.x switched its lz4 codec from org.lz4:lz4-java (managed below,
                  now unused on this path) to the at.yawk.lz4 fork, which ships its own versions -->
@@ -420,15 +415,21 @@
             <artifactId>protobuf-java-util</artifactId>
             <version>3.25.5</version>
         </dependency>
+        <!-- 1.12.797 is the last v1 release. Beyond the usual patches, the bump off 1.12.468 is
+             what clears CVE-2024-21634: aws-java-sdk-core dropped its software.amazon.ion:ion-java
+             dependency outright somewhere before 1.12.700, so the vulnerable 1.0.2 jar simply stops
+             being pulled. Pinning ion-java forward was not an option - the fixed releases only
+             exist under the com.amazon.ion groupId, whose classes sit in a different Java package
+             and so cannot satisfy the SDK's references. -->
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.12.468</version>
+            <version>1.12.797</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-sts</artifactId>
-            <version>1.12.468</version>
+            <version>1.12.797</version>
         </dependency>
         <dependency>
             <groupId>net.java.dev.jets3t</groupId>
@@ -532,6 +533,17 @@
                     <groupId>ch.qos.logback</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <!-- hadoop-common drags in the whole Jetty 9.4 stack purely to serve HttpServer2,
+                     the embedded web UI behind the NameNode/DataNode/YARN consoles. Secor is a
+                     filesystem *client* - it never stands one up, and no class under src/main
+                     imports org.eclipse.jetty. Jetty 9.4 is also past community EOL, so 9.4.57 is
+                     as far as those pins can go; dropping it is the only way to clear its findings
+                     short of moving Hadoop onto Jetty 10+. Test scope is unaffected: the
+                     hadoop-minicluster harness pulls its own Jetty back in. -->
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -554,6 +566,17 @@
                      `yarn` CLI -->
                 <exclusion>
                     <groupId>org.jline</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <!-- the second inbound path for Jetty (see hadoop-common above): hadoop-yarn-client
+                     pulls jetty-client under websocket-client, for talking to the YARN timeline
+                     service. Same reasoning - secor drives none of it. -->
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.websocket</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
