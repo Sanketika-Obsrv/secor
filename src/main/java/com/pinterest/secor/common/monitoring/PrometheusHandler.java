@@ -21,7 +21,7 @@ package com.pinterest.secor.common.monitoring;
 import com.sun.net.httpserver.HttpExchange;
 import com.twitter.ostrich.admin.CustomHttpHandler;
 import io.micrometer.core.instrument.Metrics;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

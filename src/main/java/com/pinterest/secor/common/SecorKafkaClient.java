@@ -49,7 +49,7 @@ public class SecorKafkaClient implements KafkaClient {
 
     @Override
     public int getNumPartitions(String topic) {
-        Map<String, KafkaFuture<TopicDescription>> description = mKafkaAdminClient.describeTopics(Collections.singleton(topic)).values();
+        Map<String, KafkaFuture<TopicDescription>> description = mKafkaAdminClient.describeTopics(Collections.singleton(topic)).topicNameValues();
         int numPartitions;
         try {
             numPartitions = description.get(topic).get().partitions().size();
@@ -74,7 +74,7 @@ public class SecorKafkaClient implements KafkaClient {
     public Message getCommittedMessage(TopicPartition topicPartition) throws Exception {
         org.apache.kafka.common.TopicPartition kafkaTopicPartition = new org.apache.kafka.common.TopicPartition(topicPartition.getTopic(), topicPartition.getPartition());
         mKafkaConsumer.assign(Collections.singleton(kafkaTopicPartition));
-        long committedOffset = mKafkaConsumer.committed(kafkaTopicPartition).offset();
+        long committedOffset = mKafkaConsumer.committed(Collections.singleton(kafkaTopicPartition)).get(kafkaTopicPartition).offset();
         mKafkaConsumer.seek(kafkaTopicPartition, committedOffset - 1);
         return readSingleMessage(mKafkaConsumer);
     }
