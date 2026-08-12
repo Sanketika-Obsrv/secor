@@ -1,9 +1,13 @@
 # Secor (Pinterest Secor, built from https://github.com/Sanketika-Obsrv/secor).
-# Base: official Temurin JRE (Ubuntu LTS, glibc). Chosen over the previous DHI
-# -dev build image (168 OS findings, all fix=none) and over the zero-CVE Alpine
-# tags, which are musl and would break the glibc-linked snappy/zstd natives on
-# the write path. The shell-less DHI runtime tags cannot run the entrypoint.
-ARG BASE_IMAGE=eclipse-temurin:11-jre
+# Base: official Temurin JRE on Ubuntu 24.04 (noble), glibc. Chosen over the
+# previous DHI -dev build image (168 OS findings, all fix=none) and over the
+# zero-CVE Alpine tags, which are musl and would break the glibc-linked
+# snappy/zstd natives on the write path. The shell-less DHI runtime tags cannot
+# run the entrypoint. Pinned to -noble rather than the floating 11-jre tag:
+# 26.04 replaced GNU coreutils with rust-coreutils, which alone carries ~20
+# no-fix MEDIUM findings; noble's GNU coreutils scans clean (16 MED total vs
+# ~41, all fix=none). Revisit when the rust-coreutils advisories settle.
+ARG BASE_IMAGE=eclipse-temurin:11-jre-noble
 
 FROM ${BASE_IMAGE}
 
