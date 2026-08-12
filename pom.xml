@@ -245,12 +245,11 @@
             </dependency>
 
             <!-- Remaining transitive CVEs, each pinned to the lowest version that clears every
-                 known finding for that artifact. -->
-            <dependency>
-                <groupId>com.nimbusds</groupId>
-                <artifactId>nimbus-jose-jwt</artifactId>
-                <version>9.37.4</version>
-            </dependency>
+                 known finding for that artifact. NOTE: pins that hadoop 3.4.3 / parquet 1.18
+                 made redundant were deleted after review - dependencyManagement overrides
+                 transitives DOWNWARD as happily as upward, so a stale pin here silently
+                 reverts the newer (patched) version the parent now ships (nimbus-jose-jwt,
+                 snappy-java, dnsjava were all being downgraded that way). -->
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
@@ -274,34 +273,18 @@
                 <version>2.14.0</version>
             </dependency>
             <dependency>
-                <groupId>dnsjava</groupId>
-                <artifactId>dnsjava</artifactId>
-                <version>3.6.0</version>
-            </dependency>
-            <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>aircompressor</artifactId>
                 <version>2.0.3</version>
             </dependency>
+            <!-- unify UP to the highest version requested anywhere in the tree (parquet 1.18
+                 asks for 1.1.10.8; hadoop-common still asks for 1.1.10.4 and wins nearest-wins
+                 without this). Unlike the deleted stale pins, this one is re-checked against
+                 the tree: bump it whenever a parent starts requesting something newer. -->
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.1.10.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.lz4</groupId>
-                <artifactId>lz4-java</artifactId>
-                <version>1.8.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.msgpack</groupId>
-                <artifactId>msgpack-core</artifactId>
-                <version>0.9.11</version>
-            </dependency>
-            <dependency>
-                <groupId>com.amazon.ion</groupId>
-                <artifactId>ion-java</artifactId>
-                <version>1.11.10</version>
+                <version>1.1.10.8</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jettison</groupId>
@@ -755,10 +738,14 @@
             <version>2.0.7</version>
             <scope>test</scope>
         </dependency>
+        <!-- 0.9.11 to match msgpack-core: the two ship in lockstep from the same project, and
+             the old 0.8.20 was running against the 0.9.11 core forced by a (now removed)
+             dependencyManagement pin - a split across the 0.9.0 breaking release. Bumping the
+             dataformat jar brings its own matching core transitively. -->
         <dependency>
             <groupId>org.msgpack</groupId>
             <artifactId>jackson-dataformat-msgpack</artifactId>
-            <version>0.8.20</version>
+            <version>0.9.11</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -782,10 +769,14 @@
             <version>2.22.2</version>
         </dependency>
 
+        <!-- 12.26.1 is the storage-blob release built against azure-core 1.49.1 - the same
+             azure-core that azure-identity 1.12.2 declares. On 12.25.1 the two halves of the
+             Azure stack split (blob held azure-core at 1.45.1, four minors behind what
+             identity was compiled for). -->
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-storage-blob</artifactId>
-            <version>12.25.1</version>
+            <version>12.26.1</version>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
