@@ -10,3 +10,4 @@
 # (3.20.0 is latest, verified via javap) -> NoSuchMethodError on first config
 # load. Remove this entry and bump the moment upstream ships a working release.
 CVE-2026-45205
+CVE-2024-45205

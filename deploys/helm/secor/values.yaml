@@ -1,8 +1,34 @@
 image:
   prefix: us.gcr.io/secor-demo/
   repository: secor
-  tag: latest
+  # Pinned image tag. Leave empty to default to the chart's appVersion.
+  tag: ""
   pullPolicy: Always
+
+# Pod-level security context. The secor image (see the repo Dockerfile) creates
+# and runs as the non-root user/group 9999; fsGroup makes the mounted PVC and
+# secret volumes writable/readable by that user.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 9999
+  runAsGroup: 9999
+  fsGroup: 9999
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level security context, applied to every container in the pods.
+# readOnlyRootFilesystem is safe here: secor writes only to its local data path
+# (the "local-var" PVC) and to /tmp, which is backed by an emptyDir volume.
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 9999
+  runAsGroup: 9999
+  privileged: false
+  capabilities:
+    drop:
+      - ALL
 
 secor:
   zookeeper:
@@ -41,5 +67,5 @@ secor:
 exporter:
   image:
     repository: prom/statsd-exporter
-    tag: latest
+    tag: v0.27.1
     pullPolicy: IfNotPresent
