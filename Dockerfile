@@ -16,9 +16,14 @@ WORKDIR ${SECOR_HOME}
 
 USER 0
 # pull in any security patches Ubuntu has published since the base tag was cut
-# (the base pins libsystemd0/libudev1 etc. at whatever was current at its build time)
+# (the base pins libsystemd0/libudev1 etc. at whatever was current at its build time),
+# and drop wget - nothing in the image or the entrypoint uses it, and it carries a
+# no-fix MEDIUM finding. If a deployment probe ever needs an HTTP check, prefer a
+# TCP/HTTP probe over exec'ing a binary in the container.
 RUN apt-get update \
  && apt-get upgrade -y --no-install-recommends \
+ && apt-get purge -y wget \
+ && apt-get autoremove -y \
  && rm -rf /var/lib/apt/lists/*
 
 # create the secor 9999 uid/gid directly (works on any base, with or without useradd)
