@@ -22,7 +22,7 @@ import com.pinterest.secor.common.AvroSchemaRegistry;
 import com.pinterest.secor.common.ConfigurableAvroSchemaRegistry;
 import com.pinterest.secor.common.SecorConfig;
 import com.pinterest.secor.common.SecorSchemaRegistryClient;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class AvroSchemaRegistryFactory {
     public static AvroSchemaRegistry getSchemaRegistry(SecorConfig config) {

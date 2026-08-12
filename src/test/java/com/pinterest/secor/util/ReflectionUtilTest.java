@@ -23,7 +23,8 @@ import com.pinterest.secor.common.SecorConfig;
 import com.pinterest.secor.monitoring.MetricCollector;
 import com.pinterest.secor.monitoring.OstrichMetricCollector;
 import com.pinterest.secor.parser.MessageParser;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.convert.LegacyListDelimiterHandler;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,6 +38,7 @@ public class ReflectionUtilTest {
     @Before
     public void setUp() throws Exception {
         PropertiesConfiguration properties = new PropertiesConfiguration();
+        properties.setListDelimiterHandler(new LegacyListDelimiterHandler(','));
         properties.addProperty("message.timestamp.name", "");
         properties.addProperty("message.timestamp.name.separator", "");
         properties.addProperty("secor.offsets.prefix", "offset=");

@@ -20,7 +20,7 @@ package com.pinterest.secor.common;
 
 import com.pinterest.secor.message.ParsedMessage;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.text.SimpleDateFormat;
-import org.apache.commons.lang.text.StrSubstitutor;
+import org.apache.commons.text.StringSubstitutor;
 
 /**
  * LogFilePath represents path of a log file.  It contains convenience method for building and
@@ -230,7 +230,7 @@ public class LogFilePath {
 
         List<String> pathElements = new ArrayList<String>();
         pathElements.add(mPrefix);
-        pathElements.add(StrSubstitutor.replace(pattern, getValueMap(), "{", "}"));
+        pathElements.add(StringSubstitutor.replace(pattern, getValueMap(), "{", "}"));
         System.out.println("Path:" + StringUtils.join(pathElements, "/") + mExtension);
         return StringUtils.join(pathElements, "/") + mExtension;
     }

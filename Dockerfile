@@ -1,5 +1,9 @@
-# DHI-hardened Secor (Pinterest Secor, built from https://github.com/Sanketika-Obsrv/secor).
-ARG BASE_IMAGE=dhi.io/eclipse-temurin:11-jdk-debian13-dev
+# Secor (Pinterest Secor, built from https://github.com/Sanketika-Obsrv/secor).
+# Base: official Temurin JRE (Ubuntu LTS, glibc). Chosen over the previous DHI
+# -dev build image (168 OS findings, all fix=none) and over the zero-CVE Alpine
+# tags, which are musl and would break the glibc-linked snappy/zstd natives on
+# the write path. The shell-less DHI runtime tags cannot run the entrypoint.
+ARG BASE_IMAGE=eclipse-temurin:11-jre
 
 FROM ${BASE_IMAGE}
 
@@ -7,7 +11,13 @@ ENV SECOR_HOME=/opt/secor
 WORKDIR ${SECOR_HOME}
 
 USER 0
-# DHI base has no useradd/groupadd — create the secor 9999 uid/gid directly
+# pull in any security patches Ubuntu has published since the base tag was cut
+# (the base pins libsystemd0/libudev1 etc. at whatever was current at its build time)
+RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/*
+
+# create the secor 9999 uid/gid directly (works on any base, with or without useradd)
 RUN printf 'secor:x:9999:9999:secor:/opt/secor:/bin/bash\n' >> /etc/passwd \
  && printf 'secor:x:9999:\n' >> /etc/group
 

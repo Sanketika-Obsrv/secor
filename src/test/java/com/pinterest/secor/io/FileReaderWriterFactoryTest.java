@@ -22,7 +22,8 @@ import com.pinterest.secor.common.LogFilePath;
 import com.pinterest.secor.common.SecorConfig;
 import com.pinterest.secor.util.ReflectionUtil;
 import junit.framework.TestCase;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.convert.LegacyListDelimiterHandler;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -86,6 +87,7 @@ public class FileReaderWriterFactoryTest extends TestCase {
 
     private void setupSequenceFileReaderConfig() {
         PropertiesConfiguration properties = new PropertiesConfiguration();
+        properties.setListDelimiterHandler(new LegacyListDelimiterHandler(','));
         properties.addProperty("secor.file.reader.writer.factory",
                 "com.pinterest.secor.io.impl.SequenceFileReaderWriterFactory");
         mConfig = new SecorConfig(properties);
@@ -93,6 +95,7 @@ public class FileReaderWriterFactoryTest extends TestCase {
 
     private void setupDelimitedTextFileWriterConfig() {
         PropertiesConfiguration properties = new PropertiesConfiguration();
+        properties.setListDelimiterHandler(new LegacyListDelimiterHandler(','));
         properties.addProperty("secor.file.reader.writer.factory",
                 "com.pinterest.secor.io.impl.DelimitedTextFileReaderWriterFactory");
         mConfig = new SecorConfig(properties);

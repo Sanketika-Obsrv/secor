@@ -19,10 +19,12 @@
 package com.pinterest.secor.common;
 
 import com.google.common.base.Strings;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.ConfigurationUtils;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration2.ConfigurationUtils;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.convert.LegacyListDelimiterHandler;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.configuration2.io.FileHandler;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,9 +49,17 @@ public class SecorConfig {
         Properties systemProperties = System.getProperties();
         String configProperty = systemProperties.getProperty("config");
 
-        PropertiesConfiguration properties;
+        // configuration2 migration: file loading moved from the constructor to a FileHandler
+        // (which keeps 1.x semantics: file-system lookup, classpath fallback, and `include=`
+        // directives). LegacyListDelimiterHandler is configuration2's exact reimplementation
+        // of the 1.x comma handling that deployed secor.properties files were written against:
+        // unescaped commas split into lists, and "\," escapes to a literal comma (the shipped
+        // ORC schemas, e.g. struct<a:int\,b:int>, depend on that unescaping). It must be
+        // installed BEFORE load - config2 parses values as they are added, not when read.
+        PropertiesConfiguration properties = new PropertiesConfiguration();
+        properties.setListDelimiterHandler(new LegacyListDelimiterHandler(','));
         try {
-            properties = new PropertiesConfiguration(configProperty);
+            new FileHandler(properties).load(configProperty);
         } catch (ConfigurationException e) {
             throw new RuntimeException("Error loading configuration from " + configProperty, e);
         }
