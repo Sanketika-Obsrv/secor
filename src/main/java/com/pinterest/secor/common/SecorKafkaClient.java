@@ -25,6 +25,7 @@ import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.thrift.TException;
@@ -49,7 +50,7 @@ public class SecorKafkaClient implements KafkaClient {
 
     @Override
     public int getNumPartitions(String topic) {
-        Map<String, KafkaFuture<TopicDescription>> description = mKafkaAdminClient.describeTopics(Collections.singleton(topic)).values();
+        Map<String, KafkaFuture<TopicDescription>> description = mKafkaAdminClient.describeTopics(Collections.singleton(topic)).topicNameValues();
         int numPartitions;
         try {
             numPartitions = description.get(topic).get().partitions().size();
@@ -74,8 +75,15 @@ public class SecorKafkaClient implements KafkaClient {
     public Message getCommittedMessage(TopicPartition topicPartition) throws Exception {
         org.apache.kafka.common.TopicPartition kafkaTopicPartition = new org.apache.kafka.common.TopicPartition(topicPartition.getTopic(), topicPartition.getPartition());
         mKafkaConsumer.assign(Collections.singleton(kafkaTopicPartition));
-        long committedOffset = mKafkaConsumer.committed(kafkaTopicPartition).offset();
-        mKafkaConsumer.seek(kafkaTopicPartition, committedOffset - 1);
+        // committed(Collection) maps a partition with no committed offset to null; the
+        // finalizer (PartitionFinalizer.getFinalizedUptoPartitions) expects null back in
+        // that case rather than an aborting NPE
+        OffsetAndMetadata committed = mKafkaConsumer.committed(Collections.singleton(kafkaTopicPartition)).get(kafkaTopicPartition);
+        if (committed == null) {
+            LOG.warn("no committed offset for {}", kafkaTopicPartition);
+            return null;
+        }
+        mKafkaConsumer.seek(kafkaTopicPartition, committed.offset() - 1);
         return readSingleMessage(mKafkaConsumer);
     }
 

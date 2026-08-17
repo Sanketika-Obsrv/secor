@@ -8,7 +8,8 @@ import com.pinterest.secor.io.FileReader;
 import com.pinterest.secor.io.FileWriter;
 import com.pinterest.secor.io.KeyValue;
 import com.pinterest.secor.util.orc.schema.DefaultORCSchemaProvider;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.convert.LegacyListDelimiterHandler;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.junit.Before;
@@ -45,6 +46,7 @@ public class JsonORCFileReaderWriterFactoryTest {
     @Test(expected = IllegalArgumentException.class)
     public void testNoSchema() throws Exception {
         PropertiesConfiguration properties = new PropertiesConfiguration();
+        properties.setListDelimiterHandler(new LegacyListDelimiterHandler(','));
         properties.setProperty("secor.orc.schema.provider", DEFAULT_ORC_SCHEMA_PROVIDER);
 
         SecorConfig config = new SecorConfig(properties);
@@ -58,6 +60,7 @@ public class JsonORCFileReaderWriterFactoryTest {
 
     private ReadWriteRecords runTest(String schema, String topic, String... jsonRecords) throws Exception {
         PropertiesConfiguration properties = new PropertiesConfiguration();
+        properties.setListDelimiterHandler(new LegacyListDelimiterHandler(','));
         properties.setProperty("secor.orc.schema.provider", DEFAULT_ORC_SCHEMA_PROVIDER);
         properties.setProperty(String.format("secor.orc.message.schema.%s", topic), schema);
 

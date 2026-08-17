@@ -3,7 +3,8 @@ package com.pinterest.secor.monitoring;
 import com.pinterest.secor.common.SecorConfig;
 import com.pinterest.secor.common.monitoring.PrometheusHandler;
 import com.sun.net.httpserver.HttpExchange;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.convert.LegacyListDelimiterHandler;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -18,6 +19,7 @@ public class PrometheusTest {
     @Test
     public void testPrometheusIntegration() throws IOException {
         PropertiesConfiguration properties = new PropertiesConfiguration();
+        properties.setListDelimiterHandler(new LegacyListDelimiterHandler(','));
         properties.addProperty("secor.monitoring.metrics.collector.micrometer.prometheus.enabled", true);
         SecorConfig config = new SecorConfig(properties);
         MetricCollector collector = new MicroMeterMetricCollector();
@@ -35,7 +37,10 @@ public class PrometheusTest {
         collector.gauge("test", 1, "topic");
 
         handler.handle(exchange);
-        assertTrue(responses.get(0).contains("test{topic=\"topic\",} 1.0"));
+        // The Prometheus Java client 1.x exposition format (used by micrometer-registry-prometheus
+        // 1.13+) no longer emits a trailing comma after the last label, unlike the older simpleclient
+        // 0.x format which produced test{topic="topic",} 1.0
+        assertTrue(responses.get(0).contains("test{topic=\"topic\"} 1.0"));
     }
 
 }

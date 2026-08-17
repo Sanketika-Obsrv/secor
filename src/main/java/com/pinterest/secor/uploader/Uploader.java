@@ -34,7 +34,7 @@ import com.pinterest.secor.reader.MessageReader;
 import com.pinterest.secor.util.CompressionUtil;
 import com.pinterest.secor.util.IdUtil;
 import com.pinterest.secor.util.ReflectionUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;

@@ -19,13 +19,20 @@
 package com.pinterest.secor.common;
 
 import com.google.common.base.Strings;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.ConfigurationUtils;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration2.ConfigurationUtils;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.convert.LegacyListDelimiterHandler;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.configuration2.io.AbsoluteNameLocationStrategy;
+import org.apache.commons.configuration2.io.CombinedLocationStrategy;
+import org.apache.commons.configuration2.io.FileHandler;
+import org.apache.commons.configuration2.io.FileSystemLocationStrategy;
+import org.apache.commons.configuration2.io.ProvidedURLLocationStrategy;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -47,9 +54,30 @@ public class SecorConfig {
         Properties systemProperties = System.getProperties();
         String configProperty = systemProperties.getProperty("config");
 
-        PropertiesConfiguration properties;
+        // configuration2 migration: file loading moved from the constructor to a FileHandler
+        // (which keeps 1.x semantics: file-system lookup and `include=` directives).
+        // LegacyListDelimiterHandler is configuration2's exact reimplementation of the 1.x
+        // comma handling that deployed secor.properties files were written against: unescaped
+        // commas split into lists, and "\," escapes to a literal comma (the shipped ORC
+        // schemas, e.g. struct<a:int\,b:int>, depend on that unescaping). It must be installed
+        // BEFORE load - config2 parses values as they are added, not when read.
+        //
+        // Location strategy is pinned to filesystem/absolute-path resolution only, with
+        // ClasspathLocationStrategy deliberately excluded: the shipped jar bundles example
+        // secor.*.properties files (secor.common.properties, secor.dev.*.properties, etc.) at
+        // the classpath root for local dev use. Configuration2's default location strategy
+        // checks the classpath, so a nested `include=` (e.g. secor.properties including
+        // secor.common.properties) resolves to the bundled example instead of the
+        // ConfigMap-mounted file sitting right next to it - silently dropping real config.
+        PropertiesConfiguration properties = new PropertiesConfiguration();
+        properties.setListDelimiterHandler(new LegacyListDelimiterHandler(','));
+        FileHandler handler = new FileHandler(properties);
+        handler.setLocationStrategy(new CombinedLocationStrategy(Arrays.asList(
+                new ProvidedURLLocationStrategy(),
+                new FileSystemLocationStrategy(),
+                new AbsoluteNameLocationStrategy())));
         try {
-            properties = new PropertiesConfiguration(configProperty);
+            handler.load(configProperty);
         } catch (ConfigurationException e) {
             throw new RuntimeException("Error loading configuration from " + configProperty, e);
         }

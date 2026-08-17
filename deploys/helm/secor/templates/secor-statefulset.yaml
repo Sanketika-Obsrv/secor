@@ -22,10 +22,14 @@ spec:
         prometheus.io/port: "9102"
         prometheus.io/path: "/metrics"
     spec:
+      securityContext:
+{{ toYaml .Values.podSecurityContext | indent 8 }}
       containers:
         - name: secor
-          image: {{ .Values.image.prefix }}{{ .Values.image.repository }}:{{ .Values.image.tag }}
+          image: {{ .Values.image.prefix }}{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+{{ toYaml .Values.containerSecurityContext | indent 12 }}
 
           env:
             - name: "CONFIG_FILE"
@@ -48,12 +52,16 @@ spec:
              mountPath: "/var/run/secret/cloud.google.com"
            - name: "local-var"
              mountPath: "/mnt/secor_data/message_logs/partition"
+           - name: "tmp"
+             mountPath: "/tmp"
           resources:
 {{ toYaml .Values.secor.partition.resources | indent 12 }}
 
         - name: monitor
-          image: {{ .Values.image.prefix }}{{ .Values.image.repository }}:{{ .Values.image.tag }}
+          image: {{ .Values.image.prefix }}{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+{{ toYaml .Values.containerSecurityContext | indent 12 }}
           env:
             - name: "CONFIG_FILE"
               value: "{{ .Values.secor.partition.configFile }}"
@@ -75,10 +83,14 @@ spec:
               mountPath: "/var/run/secret/cloud.google.com"
             - name: "local-var"
               mountPath: "/mnt/secor_data/message_logs/partition"
+            - name: "tmp"
+              mountPath: "/tmp"
 
         - name: statsd
           image: {{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}
           imagePullPolicy: {{ .Values.exporter.image.pullPolicy }}
+          securityContext:
+{{ toYaml .Values.containerSecurityContext | indent 12 }}
           ports:
             - containerPort: 9102
             - containerPort: 9125
@@ -92,6 +104,10 @@ spec:
        - name: "service-account"
          secret:
            secretName: "secor-service-account"
+
+       # Scratch space, required because the root filesystem is read-only.
+       - name: "tmp"
+         emptyDir: {}
 
   volumeClaimTemplates:
     - metadata:

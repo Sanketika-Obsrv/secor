@@ -3,6 +3,7 @@ package com.pinterest.secor.rebalance;
 import com.pinterest.secor.util.StatsUtil;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +65,8 @@ public class SecorConsumerRebalanceListener implements ConsumerRebalanceListener
         Map<TopicPartition, Long> committedOffsets = new HashMap<>();
         for (TopicPartition topicPartition : assignment) {
             try {
-                long committedOffset = mKafkaConsumer.committed(topicPartition) != null ? mKafkaConsumer.committed(topicPartition).offset() : -1;
+                OffsetAndMetadata committed = mKafkaConsumer.committed(Collections.singleton(topicPartition)).get(topicPartition);
+                long committedOffset = committed != null ? committed.offset() : -1;
                 committedOffsets.put(topicPartition, committedOffset);
             } catch (Exception e) {
                 LOG.trace("Unable to fetch committed offsets from kafka", e);

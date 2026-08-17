@@ -24,7 +24,8 @@ import com.pinterest.secor.util.ReflectionUtil;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.convert.LegacyListDelimiterHandler;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.DefaultCodec;
 import org.apache.hadoop.io.compress.GzipCodec;
@@ -58,6 +59,7 @@ public class FileRegistryTest extends TestCase {
     public void setUp() throws Exception {
         super.setUp();
         PropertiesConfiguration properties = new PropertiesConfiguration();
+        properties.setListDelimiterHandler(new LegacyListDelimiterHandler(','));
         properties.addProperty("secor.file.reader.writer.factory",
                 "com.pinterest.secor.io.impl.SequenceFileReaderWriterFactory");
         properties.addProperty("secor.file.age.youngest", true);

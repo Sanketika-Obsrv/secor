@@ -1,0 +1,13 @@
+# Accepted risks - each entry must carry a justification and a revisit condition.
+# Scan policy: run trivy with --ignore-unfixed so findings with no patched package
+# (FixedVersion: none) do not gate builds; this file covers the fixable remainder.
+
+# commons-configuration2 2.14.0 - DoS via uncontrolled recursion on crafted YAML
+# input with cycles. Secor loads only its own .properties files and never parses
+# YAML, so the vulnerable code path is unreachable. The fixed releases (2.15.0,
+# 2.15.1) are binary-broken: their FileLocatorUtils bytecode calls
+# AbstractSupplier.getUnchecked(), which exists in no published commons-lang3
+# (3.20.0 is latest, verified via javap) -> NoSuchMethodError on first config
+# load. Remove this entry and bump the moment upstream ships a working release.
+CVE-2026-45205
+CVE-2024-45205
