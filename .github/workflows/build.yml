@@ -41,6 +41,11 @@ jobs:
     # Everything below only runs when a version tag is pushed (e.g. `git tag 2.2.0 && git push
     # --tags`) -- branch pushes (main/master/develop) and PRs only run the Maven build/test
     # above and stop there. No image is built or published outside of a tag creation.
+    # QEMU provides the arm64 emulation the cross-arch leg needs on an amd64 runner.
+    - name: Set up QEMU
+      if: success() && github.event_name == 'push' && github.ref_type == 'tag'
+      uses: docker/setup-qemu-action@v3
+
     - name: Set up Docker Buildx
       if: success() && github.event_name == 'push' && github.ref_type == 'tag'
       uses: docker/setup-buildx-action@v3
@@ -76,17 +81,21 @@ jobs:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # Build only -- the Maven plugin's `push` goal binds to the `deploy` phase, which `mvn
-    # install` never reaches, so it would silently no-op if declared here (confirmed against
-    # the plugin's own descriptor). The explicit `docker push` step below is the real publish
-    # path -- only the exact version tag is published, no :latest.
-    - name: Build Docker Image
+    # Build + push via buildx rather than the dockerfile-maven-plugin: that plugin drives the
+    # local docker daemon and has no multi-platform support, so it cannot produce an arm64
+    # manifest. buildx can, and the Dockerfile is arch-agnostic anyway -- it only ADDs the
+    # maven-built `target/secor-*-bin.tar.gz` (pure Java, no native code), which the
+    # "Build and Test with Maven" step above has already produced.
+    # Only the exact version tag is published, no :latest.
+    - name: Build and push Docker image
       if: success() && github.event_name == 'push' && github.ref_type == 'tag'
-      run: mvn clean install -DskipTests -Pbuild-docker-image -Ddockerfile.repository=${{ env.DOCKER_IMAGE_NAME }} -Ddockerfile.tag=${{ env.DOCKER_IMAGE_TAG }} --file pom.xml
-
-    - name: Push Docker Image
-      if: success() && github.event_name == 'push' && github.ref_type == 'tag'
-      run: docker push ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
